@@ -4,6 +4,7 @@ import sys
 import os
 import urllib
 import urllib2
+import json
 from cookielib import CookieJar
 
 
@@ -53,6 +54,7 @@ class check():
         self.cj = CookieJar()
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
         self.opener.addheaders.pop()
+        self.clientid = '52332159'
 
     def check_(self):
         check = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
@@ -96,13 +98,11 @@ class check():
         self.opener.addheaders.append(('Content-Type', "application/x-www-form-urlencoded"))
         self.opener.addheaders.append(('Referer', "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=2"))
         self.opener.addheaders.append(('User-Agent', "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36"))
-        self.opener.addheaders.append(('Cookie', coo))
         req = urllib2.Request("http://d.web2.qq.com/channel/login2", data_ )
         #req = urllib2.Request("http://cgi.web2.qq.com/keycgi/qqweb/newuac/get.do", data_ )
-        print req
         print self.opener.addheaders
-        test = self.opener.open(req)
-        print test.read()
+        self.jsondata = self.opener.open(req).read()
+        print self.jsondata
         #headers = {
         #    "Content-Type": "application/x-www-form-urlencoded",
         #    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36",
@@ -112,6 +112,12 @@ class check():
         #print req.data
         #res = urllib2.urlopen(req)
         #print res.read()
+
+    def json_to_data(self,str):
+        #self.retcode = json.loads(str).values[0]
+        #print self.jsondata.__class__
+        self.result = json.loads(self.jsondata).values()[1]
+        return self.result
 
     def ret(self):
         self.check_()
@@ -131,6 +137,16 @@ class check():
             sec = verifychar
             return sec.upper(), thi[1:-1]
 
+    def heartbeat(self):
+        str = self.json_to_data(self.jsondata)
+        data = """{"clientid":"%s","psessionid":"%s","key":0,"ids":[]}""" % (self.clientid, str["psessionid"])
+        data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, str["psessionid"])
+        print data
+        #print self.opener.addheaders
+        req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data )
+        print self.opener.open(req).read()
+        print 111
+
 #pw1 = md("asqfsd1")
 #pw2 = md2("\x00\x00\x00\x00\xa4\x15\x99\x5a")
 #print md3('WHET')
@@ -149,6 +165,7 @@ if __name__ == "__main__":
     #print sign_url
     a.sign_url = sign_url
     a.get_()
+    a.heartbeat()
     #print 1111111111111111111111
     #b = check(qq)
     #verify = 'AKVH'
