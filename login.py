@@ -5,13 +5,15 @@ import os
 import urllib
 import urllib2
 import json
+import threading as thread
+import time
 from cookielib import CookieJar
 
 
 class pwd_encrypt():
     def __init__(self, uin, pw, verify):
-        self.pw1 = ''
-        self.pw2 = ''
+        self.pw1 = ""
+        self.pw2 = ""
         self.uin = uin
         self.pw = pw
         self.verify = verify
@@ -48,13 +50,14 @@ class pwd_encrypt():
         return hashlib.md5(self.pw2 + self.verify).hexdigest().upper()
 
 
-class check():
+class check(thread.Thread):
     def __init__(self, qq):
         self.qq = qq
         self.cj = CookieJar()
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
         self.opener.addheaders.pop()
-        self.clientid = '52332159'
+        self.clientid = "52332159"
+        thread.Thread.__init__(self)
 
     def check_(self):
         check = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
@@ -76,30 +79,30 @@ class check():
         cook_ = self.cj._cookies.values()[1]
         cook_2 = self.cj
         temp = []
-        coo = ''
+        coo = ""
         for index, cookie in enumerate(cook_2):
-            #print cookie.name
-            if cookie.name == 'ptwebqq':
+            if cookie.name == "ptwebqq":
                 ptweb = cookie.value
-            if cookie.name == 'skey':
+            if cookie.name == "skey":
                 skey = cookie.value
-            if cookie.name == 'uin':
+            if cookie.name == "uin":
                 uin = cookie.value
             coo = "%s %s=%s;" % (coo, cookie.name, cookie.value)
-            #temp.append(cookie.value)
-            #print index, '     ', cookie.name
-        login = """{"status":"online","ptwebqq":"%s","passwd_sig":"","clientid":"52332159","psessionid":null}"""%(ptweb)
-        print 'cookie:  %s' % coo
+        login = """{
+            "status":"online",
+            "ptwebqq":"%s",
+            "passwd_sig":"",
+            "clientid":"52332159",
+            "psessionid":null}""" % (ptweb)
+        print "cookie:  %s" % coo
         print ptweb
-        #data_ = urllib.urlencode(login)
         data_ = urllib.quote(login)
         data_ = "r=%s&clientid=52332159&psessionid=null" % data_
         print data_
-        self.opener.addheaders.append(('Content-Type', "application/x-www-form-urlencoded"))
-        self.opener.addheaders.append(('Referer', "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=2"))
-        self.opener.addheaders.append(('User-Agent', "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36"))
-        req = urllib2.Request("http://d.web2.qq.com/channel/login2", data_ )
-        #req = urllib2.Request("http://cgi.web2.qq.com/keycgi/qqweb/newuac/get.do", data_ )
+        self.opener.addheaders.append(("Content-Type", "application/x-www-form-urlencoded"))
+        self.opener.addheaders.append(("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=2"))
+        self.opener.addheaders.append(("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36"))
+        req = urllib2.Request("http://d.web2.qq.com/channel/login2", data_)
         print self.opener.addheaders
         self.jsondata = self.opener.open(req).read()
         print self.jsondata
@@ -113,7 +116,7 @@ class check():
         #res = urllib2.urlopen(req)
         #print res.read()
 
-    def json_to_data(self,str):
+    def json_to_data(self, str):
         #self.retcode = json.loads(str).values[0]
         #print self.jsondata.__class__
         self.result = json.loads(self.jsondata).values()[1]
@@ -125,11 +128,11 @@ class check():
         data = data[13: -2]
         fir, sec, thi = data.split(",")
         #print fir[1:-1], sec[1:-1], thi[1:-1]
-        if fir[1:-1] == '0':
+        if fir[1:-1] == "0":
             return sec[1:-1], thi[1:-1]
         else:
             verify_jpg = "/home/gho/verify.jpg"
-            file_ = open(verify_jpg, 'wb+')
+            file_ = open(verify_jpg, "wb+")
             jpgdata = self.get_verify(thi[1:-1])
             file_.write(jpgdata)
             file_.close()
@@ -141,21 +144,44 @@ class check():
         str = self.json_to_data(self.jsondata)
         data = """{"clientid":"%s","psessionid":"%s","key":0,"ids":[]}""" % (self.clientid, str["psessionid"])
         data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, str["psessionid"])
-        print data
+        #print data
         #print self.opener.addheaders
-        req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data )
-        print self.opener.open(req).read()
-        print 111
+        req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data)
+        return self.opener.open(req).read()
 
+    def run(self):
+        while 1:
+            try:
+                #print 123
+                request_msg = self.heartbeat()
+                print request_msg
+                msg().return_from_tencent(json.loads(request_msg))
+            except:
+                pass
+
+class msg:
+    def return_from_tencent(self,msg_data):
+        #print 123
+        if msg_data["retcode"] == 0:
+            #print 321
+            res = msg_data["result"][0]
+            if res["poll_type"] == "message":
+                #print 222
+                msg_context = res["value"]["content"][1]
+                msg_from = res["value"]["from_uin"]
+                print "from %s" % msg_from
+                print "context %s" % msg_context
+                
 #pw1 = md("asqfsd1")
 #pw2 = md2("\x00\x00\x00\x00\xa4\x15\x99\x5a")
-#print md3('WHET')
+#print md3("WHET")
 if __name__ == "__main__":
     qq = raw_input("please input qq:\n")
     pw = raw_input("please input password:\n")
     a = check(qq)
+    a.setDaemon(True)
     verify, uin = a.ret()
-    exec("uin = '%s'"%uin)
+    exec("uin = '%s'" % uin)
     print uin
     pwd = pwd_encrypt(uin, pw, verify)
     pwd.md()
@@ -165,12 +191,14 @@ if __name__ == "__main__":
     #print sign_url
     a.sign_url = sign_url
     a.get_()
-    a.heartbeat()
+    a.start()
+    while 1:
+        time.sleep(100)
     #print 1111111111111111111111
     #b = check(qq)
-    #verify = 'AKVH'
-    #uin = '\x00\x00\x00\x00\xa4\x15\x99\x5a'
-    #cc = pwd_encrypt(uin, pw, verify) 
+    #verify = "AKVH"
+    #uin = "\x00\x00\x00\x00\xa4\x15\x99\x5a"
+    #cc = pwd_encrypt(uin, pw, verify)
     #cc.md()
     #print cc.pw1
     #cc.md2()
