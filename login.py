@@ -119,6 +119,8 @@ class check(thread.Thread):
     def json_to_data(self, str):
         #self.retcode = json.loads(str).values[0]
         #print self.jsondata.__class__
+        #print json.loads(self.jsondata).values()
+        #import debug
         self.result = json.loads(self.jsondata).values()[1]
         return self.result
 
@@ -172,9 +174,6 @@ class msg:
                 print "from %s" % msg_from
                 print "context %s" % msg_context
                 
-#pw1 = md("asqfsd1")
-#pw2 = md2("\x00\x00\x00\x00\xa4\x15\x99\x5a")
-#print md3("WHET")
 if __name__ == "__main__":
     qq = raw_input("please input qq:\n")
     pw = raw_input("please input password:\n")
@@ -188,12 +187,13 @@ if __name__ == "__main__":
     pwd.md2()
     fin_pw = pwd.md3()
     sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % fin_pw + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
-    #print sign_url
     a.sign_url = sign_url
     a.get_()
     a.start()
     while 1:
-        time.sleep(100)
+        verifychar = raw_input()
+        print verifychar
+        #time.sleep(100)
     #print 1111111111111111111111
     #b = check(qq)
     #verify = "AKVH"
