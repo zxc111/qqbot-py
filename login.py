@@ -7,6 +7,7 @@ import urllib2
 import json
 import threading as thread
 import time
+import pdb
 from cookielib import CookieJar
 
 
@@ -17,9 +18,9 @@ class pwd_encrypt():
         self.uin = uin
         self.pw = pw
         self.verify = verify
-        print self.uin
-        print self.pw
-        print verify
+        #print self.uin
+        #print self.pw
+        #print verify
 
     def tobin(self, str):
         arr = []
@@ -52,6 +53,7 @@ class pwd_encrypt():
 
 class check(thread.Thread):
     def __init__(self, qq):
+        self.msg_id = 5000001
         self.qq = qq
         self.cj = CookieJar()
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
@@ -71,7 +73,7 @@ class check(thread.Thread):
 
     def get_(self):
         contain = self.opener.open(self.sign_url).read()
-        print contain
+        #print contain
         contain = contain[8:-2].split(",")[2]
         contain = contain[1:-1]
         #print contain
@@ -149,6 +151,21 @@ class check(thread.Thread):
         #print data
         #print self.opener.addheaders
         req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data)
+        print "hearrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrt"
+        return self.opener.open(req).read()
+
+    def post_msg_to_body(self, to_id, msg):
+        self.msg_id = self.msg_id + 1
+        print self.msg_id
+        str = self.json_to_data(self.jsondata)
+        to_id = "%s" % to_id
+        #data = """{"to":%s,"face":540,,"content":"["334",["font",{"name":"\\u5b8b\\u4f53","size":"10","style":[0,0,0],"color":"993366"}]]","msg_id":123223456,"clientid":"%s","psessionid":"%s"}""" % (to_id, self.clientid, str["psessionid"])
+        #print data
+        data = "%7B%22to%22%3A"+to_id+"%2C%22face%22%3A540%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A" + "%s" % self.msg_id + "%2C%22clientid%22%3A%22"+ ("%s" % self.clientid) +"%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
+        #data = "%7B%22to%22%3A"+to_id+"%2C%22face%22%3A540%2C%22content%22%3A%22%5B%5C%22"+"123"+"%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A5150001%2C%22clientid%22%3A%22"+ ("%s" % self.clientid) +"%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
+        data = "r=%s&clientid=%s&psessionid=%s" % (data, self.clientid, str["psessionid"])
+        req = urllib2.Request("http://d.web2.qq.com/channel/send_buddy_msg2", data.encode("utf8"))
+        print "msggggggggggggggggggggggggggggg"
         return self.opener.open(req).read()
 
     def run(self):
@@ -157,7 +174,8 @@ class check(thread.Thread):
                 #print 123
                 request_msg = self.heartbeat()
                 print request_msg
-                msg().return_from_tencent(json.loads(request_msg))
+                request_msg_to_json = json.loads(request_msg)
+                msg().return_from_tencent(request_msg_to_json)
             except:
                 pass
 
@@ -166,13 +184,20 @@ class msg:
         #print 123
         if msg_data["retcode"] == 0:
             #print 321
-            res = msg_data["result"][0]
-            if res["poll_type"] == "message":
-                #print 222
-                msg_context = res["value"]["content"][1]
-                msg_from = res["value"]["from_uin"]
-                print "from %s" % msg_from
-                print "context %s" % msg_context
+            for msg in msg_data["result"]:
+                res = msg
+                if res["poll_type"] == "message":
+                    #print 222
+                    msg_context = res["value"]["content"][1]
+                    msg_from = res["value"]["from_uin"]
+                    print "from %s" % msg_from
+                    print "context %s" % msg_context
+                    try:
+                        print "bbbbbbbbbbbbbbbbbegin"
+                        thread.Thread(target = a.post_msg_to_body, args=[msg_from,msg_context]).start()
+                        print "eeeeeeeeeeeeeeeeeeeeeend"
+                    except:
+                      print "errrrrrrrrrrrrrrrrrrrrrrrror"
                 
 if __name__ == "__main__":
     qq = raw_input("please input qq:\n")
@@ -190,6 +215,9 @@ if __name__ == "__main__":
     a.sign_url = sign_url
     a.get_()
     a.start()
+    post = a
+
+
     while 1:
         verifychar = raw_input()
         print verifychar
@@ -203,3 +231,6 @@ if __name__ == "__main__":
     #print cc.pw1
     #cc.md2()
     #print cc.pw2
+
+    #group_uin
+    #http://d.web2.qq.com/channel/send_qun_msg2
