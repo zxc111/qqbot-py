@@ -53,7 +53,8 @@ class pwd_encrypt():
 
 class check(thread.Thread):
     def __init__(self, qq):
-        self.msg_id = 5000001
+        self.body_msg_id = 5000001
+        self.qun_msg_id = 9000001
         self.qq = qq
         self.cj = CookieJar()
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
@@ -154,19 +155,34 @@ class check(thread.Thread):
         print "hearrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrt"
         return self.opener.open(req).read()
 
-    def post_msg_to_body(self, to_id, msg):
-        self.msg_id = self.msg_id + 1
-        print self.msg_id
-        str = self.json_to_data(self.jsondata)
-        to_id = "%s" % to_id
+    #to_where = 1 to_body, 0 to_qun
+    def post_msg_to_body_or_qun(self, to_id, msg, to_where):
         #data = """{"to":%s,"face":540,,"content":"["334",["font",{"name":"\\u5b8b\\u4f53","size":"10","style":[0,0,0],"color":"993366"}]]","msg_id":123223456,"clientid":"%s","psessionid":"%s"}""" % (to_id, self.clientid, str["psessionid"])
         #print data
-        data = "%7B%22to%22%3A"+to_id+"%2C%22face%22%3A540%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A" + "%s" % self.msg_id + "%2C%22clientid%22%3A%22"+ ("%s" % self.clientid) +"%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
+        #data = "%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A" + "%s" % self.msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
         #data = "%7B%22to%22%3A"+to_id+"%2C%22face%22%3A540%2C%22content%22%3A%22%5B%5C%22"+"123"+"%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A5150001%2C%22clientid%22%3A%22"+ ("%s" % self.clientid) +"%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
-        data = "r=%s&clientid=%s&psessionid=%s" % (data, self.clientid, str["psessionid"])
-        req = urllib2.Request("http://d.web2.qq.com/channel/send_buddy_msg2", data.encode("utf8"))
+        #pdb.set_trace()
+        url, data = self.set_sent_msg_post_data(to_id, to_where, msg)
+        req = urllib2.Request(url, data.encode("utf8"))
+        #print data
         print "msggggggggggggggggggggggggggggg"
-        return self.opener.open(req).read()
+        print self.opener.open(req).read()
+
+    def set_sent_msg_post_data(self, to_id, to_where, msg):
+        str = self.json_to_data(self.jsondata)
+        to_id = "%s" % to_id
+        data = "%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A" 
+        if to_where == "message":
+            self.body_msg_id = self.body_msg_id + 1
+            data = "%7B%22to%22%3A" + to_id + "%2C%22face%22%3A540" + data + "%s" % self.body_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
+            url = "http://d.web2.qq.com/channel/send_buddy_msg2"
+        else:
+            self.qun_msg_id = self.qun_msg_id + 1
+            data = "%7B%22group_uin%22%3A" + to_id + data + "%s" % self.qun_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
+            url = "http://d.web2.qq.com/channel/send_qun_msg2" 
+        data = "r=%s&clientid=%s&psessionid=%s" % (data, self.clientid, str["psessionid"])
+        return url, data
+            
 
     def run(self):
         while 1:
@@ -179,26 +195,31 @@ class check(thread.Thread):
             except:
                 pass
 
+
 class msg:
-    def return_from_tencent(self,msg_data):
+    def return_from_tencent(self, msg_data):
         #print 123
         if msg_data["retcode"] == 0:
             #print 321
             for msg in msg_data["result"]:
                 res = msg
-                if res["poll_type"] == "message":
+                if res["poll_type"] == "message" or res["poll_type"] == "group_message":
                     #print 222
                     msg_context = res["value"]["content"][1]
                     msg_from = res["value"]["from_uin"]
+                    to_where = res["poll_type"]
                     print "from %s" % msg_from
                     print "context %s" % msg_context
+                    #a.post_msg_to_body_or_qun(msg_from, msg_context, to_where)
                     try:
                         print "bbbbbbbbbbbbbbbbbegin"
-                        thread.Thread(target = a.post_msg_to_body, args=[msg_from,msg_context]).start()
+                        #a.post_msg_to_body_or_qun(msg_from, msg_context, to_where)
+                        print "------------------------"
+                        thread.Thread(target=a.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                         print "eeeeeeeeeeeeeeeeeeeeeend"
                     except:
-                      print "errrrrrrrrrrrrrrrrrrrrrrrror"
-                
+                        print "errrrrrrrrrrrrrrrrrrrrrrrror"
+
 if __name__ == "__main__":
     qq = raw_input("please input qq:\n")
     pw = raw_input("please input password:\n")
@@ -216,8 +237,6 @@ if __name__ == "__main__":
     a.get_()
     a.start()
     post = a
-
-
     while 1:
         verifychar = raw_input()
         print verifychar
