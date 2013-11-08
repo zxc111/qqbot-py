@@ -18,9 +18,6 @@ class pwd_encrypt():
         self.uin = uin
         self.pw = pw
         self.verify = verify
-        #print self.uin
-        #print self.pw
-        #print verify
 
     def tobin(self, str):
         arr = []
@@ -32,22 +29,15 @@ class pwd_encrypt():
 
     def md(self):
         self.pw1 = self.tobin(hashlib.md5(self.pw).hexdigest().upper())
-        print self.pw1
+        #print self.pw1
         return self.pw1
 
     def md2(self):
         self.pw2 = hashlib.md5(self.pw1+self.uin).hexdigest().upper()
-        print self.pw2
+        #print self.pw2
         return self.pw2
 
     def md3(self):
-        #print 111111111111111111111111
-        #print "pw %s:"%self.pw
-        #print "pw1 %s "%self.pw1
-        #print "pw2 %s "%self.pw2
-        #print "veri %s "%self.verify
-        #print hashlib.md5(self.pw2 + self.verify).hexdigest().upper()
-        #print 111111111111111111111111111
         return hashlib.md5(self.pw2 + self.verify).hexdigest().upper()
 
 
@@ -72,13 +62,25 @@ class check(thread.Thread):
         self.jpg = self.opener.open(verify_jpg).read()
         return self.jpg
 
-    def get_(self):
-        contain = self.opener.open(self.sign_url).read()
+    def login(self):
+        flag = 1
+        while flag:
+            try:
+                contain = self.opener.open(self.sign_url, timeout = 5).read()
+                flag = 0
+            except:
+                print "timeout1"
         #print contain
         contain = contain[8:-2].split(",")[2]
         contain = contain[1:-1]
         #print contain
-        print self.opener.open(contain).read()
+        flag = 1
+        while flag:
+            try:
+                self.opener.open(contain, timeout = 5).read()
+                flag = 0
+            except:
+                print "timeout2"
         cook_ = self.cj._cookies.values()[1]
         cook_2 = self.cj
         temp = []
@@ -97,27 +99,24 @@ class check(thread.Thread):
             "passwd_sig":"",
             "clientid":"52332159",
             "psessionid":null}""" % (ptweb)
-        print "cookie:  %s" % coo
-        print ptweb
+        #print "cookie:  %s" % coo
+        #print ptweb
         data_ = urllib.quote(login)
         data_ = "r=%s&clientid=52332159&psessionid=null" % data_
-        print data_
+        #print data_
         self.opener.addheaders.append(("Content-Type", "application/x-www-form-urlencoded"))
         self.opener.addheaders.append(("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=2"))
         self.opener.addheaders.append(("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36"))
         req = urllib2.Request("http://d.web2.qq.com/channel/login2", data_)
         print self.opener.addheaders
-        self.jsondata = self.opener.open(req).read()
+        flag = 1
+        while flag:
+            try:
+                self.jsondata = self.opener.open(req, timeout = 5).read()
+                flag = 0
+            except:
+                pass
         print self.jsondata
-        #headers = {
-        #    "Content-Type": "application/x-www-form-urlencoded",
-        #    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36",
-        #    }
-        #req = urllib2.Request("https://d.web2.qq.com/channel/login2", data_, headers)
-        #print req.headers
-        #print req.data
-        #res = urllib2.urlopen(req)
-        #print res.read()
 
     def json_to_data(self, str):
         #self.retcode = json.loads(str).values[0]
@@ -132,7 +131,6 @@ class check(thread.Thread):
         data = self.data
         data = data[13: -2]
         fir, sec, thi = data.split(",")
-        #print fir[1:-1], sec[1:-1], thi[1:-1]
         if fir[1:-1] == "0":
             return sec[1:-1], thi[1:-1]
         else:
@@ -153,9 +151,13 @@ class check(thread.Thread):
         #print self.opener.addheaders
         req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data)
         print "hearrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrt"
-        return self.opener.open(req).read()
+        flag = 1
+        while flag:
+            try:
+                return self.opener.open(req).read()
+            except:
+                print "get_server_msg_time_out"
 
-    #to_where = 1 to_body, 0 to_qun
     def post_msg_to_body_or_qun(self, to_id, msg, to_where):
         #data = """{"to":%s,"face":540,,"content":"["334",["font",{"name":"\\u5b8b\\u4f53","size":"10","style":[0,0,0],"color":"993366"}]]","msg_id":123223456,"clientid":"%s","psessionid":"%s"}""" % (to_id, self.clientid, str["psessionid"])
         #print data
@@ -166,7 +168,13 @@ class check(thread.Thread):
         req = urllib2.Request(url, data.encode("utf8"))
         #print data
         print "msggggggggggggggggggggggggggggg"
-        print self.opener.open(req).read()
+        flag = 1
+        while flag:
+            try:
+                print self.opener.open(req, timeout=5).read()
+                flag = 0
+            except:
+                print "send error"
 
     def set_sent_msg_post_data(self, to_id, to_where, msg):
         str = self.json_to_data(self.jsondata)
@@ -187,7 +195,6 @@ class check(thread.Thread):
     def run(self):
         while 1:
             try:
-                #print 123
                 request_msg = self.heartbeat()
                 print request_msg
                 request_msg_to_json = json.loads(request_msg)
@@ -198,29 +205,22 @@ class check(thread.Thread):
 
 class msg:
     def return_from_tencent(self, msg_data):
-        #print 123
         if msg_data["retcode"] == 0:
-            #print 321
             for msg in msg_data["result"]:
                 res = msg
                 if res["poll_type"] == "message" or res["poll_type"] == "group_message":
-                    #print 222
                     msg_context = res["value"]["content"][1]
                     msg_from = res["value"]["from_uin"]
                     to_where = res["poll_type"]
                     print "from %s" % msg_from
                     print "context %s" % msg_context
-                    #a.post_msg_to_body_or_qun(msg_from, msg_context, to_where)
                     try:
-                        print "bbbbbbbbbbbbbbbbbegin"
-                        #a.post_msg_to_body_or_qun(msg_from, msg_context, to_where)
-                        print "------------------------"
                         thread.Thread(target=a.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
-                        print "eeeeeeeeeeeeeeeeeeeeeend"
                     except:
                         print "errrrrrrrrrrrrrrrrrrrrrrrror"
 
 if __name__ == "__main__":
+    print 2752878938
     qq = raw_input("please input qq:\n")
     pw = raw_input("please input password:\n")
     a = check(qq)
@@ -234,22 +234,16 @@ if __name__ == "__main__":
     fin_pw = pwd.md3()
     sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % fin_pw + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
     a.sign_url = sign_url
-    a.get_()
-    a.start()
+    a.login()
+    #a.start()
+    for i in range(0,3):
+        exec("thread%s = thread.Thread(target=a.run)" % i )
+        exec("thread%s.setDaemon(True)" % i)
+        exec("thread%s.start()" % i)
+        print "thread %s start \n" % i
+        time.sleep(5) 
     post = a
     while 1:
-        verifychar = raw_input()
-        print verifychar
-        #time.sleep(100)
-    #print 1111111111111111111111
-    #b = check(qq)
-    #verify = "AKVH"
-    #uin = "\x00\x00\x00\x00\xa4\x15\x99\x5a"
-    #cc = pwd_encrypt(uin, pw, verify)
-    #cc.md()
-    #print cc.pw1
-    #cc.md2()
-    #print cc.pw2
-
-    #group_uin
-    #http://d.web2.qq.com/channel/send_qun_msg2
+        #verifychar = raw_input()
+        #print verifychar
+        time.sleep(100)
