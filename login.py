@@ -51,6 +51,7 @@ class check(thread.Thread):
         self.opener.addheaders.pop()
         self.clientid = "52332159"
         thread.Thread.__init__(self)
+        self.timeout = 0
 
     def check_(self):
         check = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
@@ -144,13 +145,13 @@ class check(thread.Thread):
             return sec.upper(), thi[1:-1]
 
     def heartbeat(self):
+        print "heart begin"
         str = self.json_to_data(self.jsondata)
         data = """{"clientid":"%s","psessionid":"%s","key":0,"ids":[]}""" % (self.clientid, str["psessionid"])
         data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, str["psessionid"])
         #print data
         #print self.opener.addheaders
         req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data)
-        print "hearrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrt"
         flag = 1
         while flag:
             try:
@@ -164,10 +165,10 @@ class check(thread.Thread):
         #data = "%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A" + "%s" % self.msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
         #data = "%7B%22to%22%3A"+to_id+"%2C%22face%22%3A540%2C%22content%22%3A%22%5B%5C%22"+"123"+"%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A5150001%2C%22clientid%22%3A%22"+ ("%s" % self.clientid) +"%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
         #pdb.set_trace()
+        print "send msg"
         url, data = self.set_sent_msg_post_data(to_id, to_where, msg)
         req = urllib2.Request(url, data.encode("utf8"))
         #print data
-        print "msggggggggggggggggggggggggggggg"
         flag = 1
         while flag:
             try:
@@ -195,6 +196,9 @@ class check(thread.Thread):
     def run(self):
         while 1:
             try:
+                if self.timeout == 1:
+                    print "heart end"
+                    break
                 request_msg = self.heartbeat()
                 print request_msg
                 request_msg_to_json = json.loads(request_msg)
@@ -214,20 +218,23 @@ class msg:
                     to_where = res["poll_type"]
                     print "from %s" % msg_from
                     print "context %s" % msg_context
+                    #pdb.set_trace()
                     try:
-                        thread.Thread(target=a.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
+                        if a.timeout == 0:
+                            thread.Thread(target=a.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
                         print "errrrrrrrrrrrrrrrrrrrrrrrror"
+        elif msg_data["retcode"] == 121:
+            a.timeout = 1
+         
 
-if __name__ == "__main__":
-    print 2752878938
-    qq = raw_input("please input qq:\n")
-    pw = raw_input("please input password:\n")
+def login(qq, pw):
+    global a
     a = check(qq)
     a.setDaemon(True)
     verify, uin = a.ret()
     exec("uin = '%s'" % uin)
-    print uin
+    #print uin
     pwd = pwd_encrypt(uin, pw, verify)
     pwd.md()
     pwd.md2()
@@ -235,15 +242,23 @@ if __name__ == "__main__":
     sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % fin_pw + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
     a.sign_url = sign_url
     a.login()
-    #a.start()
     for i in range(0,3):
         exec("thread%s = thread.Thread(target=a.run)" % i )
         exec("thread%s.setDaemon(True)" % i)
         exec("thread%s.start()" % i)
         print "thread %s start \n" % i
         time.sleep(5) 
-    post = a
+    while 1:
+        if a.timeout == 1:
+            break
+        time.sleep(100)
+    
+if __name__ == "__main__":
+    print 2752878938
+    qq = raw_input("please input qq:\n")
+    pw = raw_input("please input password:\n")
     while 1:
         #verifychar = raw_input()
         #print verifychar
-        time.sleep(100)
+        login(qq, pw)
+        print "timeout so login again"
