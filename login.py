@@ -224,7 +224,7 @@ class msg:
                             thread.Thread(target=a.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
                         print "errrrrrrrrrrrrrrrrrrrrrrrror"
-        elif msg_data["retcode"] == 121:
+        elif msg_data["retcode"] == 121 or msg_data["retcode"] == 100006:
             a.timeout = 1
          
 
