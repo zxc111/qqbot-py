@@ -8,6 +8,7 @@ import json
 import threading as thread
 import time
 import pdb
+import ConfigParser
 from cookielib import CookieJar
 
 
@@ -40,6 +41,26 @@ class pwd_encrypt():
     def md3(self):
         return hashlib.md5(self.pw2 + self.verify).hexdigest().upper()
 
+
+class Config():
+    @staticmethod
+    def set_config():
+        config = ConfigParser.RawConfigParser()
+        config.read("config")
+        if config.get("qq_info", "qq") != "":
+            qq = int(config.get("qq_info", "qq"))
+        else:
+            qq = raw_input("please input qq:\n")
+        if config.get("qq_info", "password") != "":
+            password = config.get("qq_info", "password")
+        else:
+            password = raw_input("please input password:\n")
+        if config.get("qq_info", "verify_path") != "":
+            verify_path = config.get("qq_info", "verify_path")
+        else:
+            raise "can not output verify img"
+        return qq, password, verify_path
+    
 
 class check(thread.Thread):
     def __init__(self, qq):
@@ -135,8 +156,7 @@ class check(thread.Thread):
         if fir[1:-1] == "0":
             return sec[1:-1], thi[1:-1]
         else:
-            verify_jpg = "/home/gho/verify.jpg"
-            file_ = open(verify_jpg, "wb+")
+            file_ = open(verify_path, "wb+")
             jpgdata = self.get_verify(thi[1:-1])
             file_.write(jpgdata)
             file_.close()
@@ -220,20 +240,20 @@ class msg:
                     print "context %s" % msg_context
                     #pdb.set_trace()
                     try:
-                        if a.timeout == 0:
-                            thread.Thread(target=a.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
+                        if thread_qq.timeout == 0:
+                            thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
                         print "error"
         elif msg_data["retcode"] == 121 or msg_data["retcode"] == 100006 or msg_data["retcode"] == 120:
-            a.timeout = 1
+            thread_qq.timeout = 1
          
 
 def login(qq, pw):
     time_now = time.localtime().tm_yday
-    global a
-    a = check(qq)
-    a.setDaemon(True)
-    verify, uin = a.ret()
+    global thread_qq
+    thread_qq = check(qq)
+    thread_qq.setDaemon(True)
+    verify, uin = thread_qq.ret()
     exec("uin = '%s'" % uin)
     #print uin
     pwd = pwd_encrypt(uin, pw, verify)
@@ -241,25 +261,25 @@ def login(qq, pw):
     pwd.md2()
     fin_pw = pwd.md3()
     sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % fin_pw + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
-    a.sign_url = sign_url
-    a.login()
+    thread_qq.sign_url = sign_url
+    thread_qq.login()
     for i in range(0,3):
-        exec("thread%s = thread.Thread(target=a.run)" % i )
+        exec("thread%s = thread.Thread(target=thread_qq.run)" % i )
         exec("thread%s.setDaemon(True)" % i)
         exec("thread%s.start()" % i)
         print "thread %s start \n" % i
         time.sleep(5) 
     while 1:
-        if a.timeout == 1 or time_now != time.localtime().tm_yday:
+        if thread_qq.timeout == 1 or time_now != time.localtime().tm_yday:
             break
         time.sleep(100)
     
 if __name__ == "__main__":
     print 2752878938
-    qq = raw_input("please input qq:\n")
-    pw = raw_input("please input password:\n")
+    global verify_path
+    qq, password, verify_path = Config.set_config()
     while 1:
         #verifychar = raw_input()
         #print verifychar
-        login(qq, pw)
+        login(qq, password)
         print "timeout so login again"
