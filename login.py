@@ -223,12 +223,13 @@ class msg:
                         if a.timeout == 0:
                             thread.Thread(target=a.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
-                        print "errrrrrrrrrrrrrrrrrrrrrrrror"
-        elif msg_data["retcode"] == 121 or msg_data["retcode"] == 100006:
+                        print "error"
+        elif msg_data["retcode"] == 121 or msg_data["retcode"] == 100006 or msg_data["retcode"] == 120:
             a.timeout = 1
          
 
 def login(qq, pw):
+    time_now = time.localtime().tm_yday
     global a
     a = check(qq)
     a.setDaemon(True)
@@ -249,7 +250,7 @@ def login(qq, pw):
         print "thread %s start \n" % i
         time.sleep(5) 
     while 1:
-        if a.timeout == 1:
+        if a.timeout == 1 or time_now != time.localtime().tm_yday:
             break
         time.sleep(100)
     
