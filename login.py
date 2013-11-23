@@ -46,7 +46,8 @@ class Config():
     @staticmethod
     def set_config():
         config = ConfigParser.RawConfigParser()
-        config.read("config")
+        path = os.path.split(os.path.realpath(__file__))[0] + "/config"
+        config.read(path)
         if config.get("qq_info", "qq") != "":
             qq = int(config.get("qq_info", "qq"))
         else:
@@ -282,4 +283,4 @@ if __name__ == "__main__":
         #verifychar = raw_input()
         #print verifychar
         login(qq, password)
-        print "timeout so login again"
+        print "connected timeout, so login again"
