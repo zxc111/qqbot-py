@@ -93,7 +93,6 @@ class check(thread.Thread):
                 flag = 0
             except:
                 print "timeout1"
-        #print contain
         contain = contain[8:-2].split(",")[2]
         contain = contain[1:-1]
         #print contain
@@ -122,7 +121,6 @@ class check(thread.Thread):
             "passwd_sig":"",
             "clientid":"52332159",
             "psessionid":null}""" % (ptweb)
-        #print "cookie:  %s" % coo
         #print ptweb
         data_ = urllib.quote(login)
         data_ = "r=%s&clientid=52332159&psessionid=null" % data_
@@ -181,10 +179,6 @@ class check(thread.Thread):
                 print "get_server_msg_time_out"
 
     def post_msg_to_body_or_qun(self, to_id, msg, to_where):
-        #data = """{"to":%s,"face":540,,"content":"["334",["font",{"name":"\\u5b8b\\u4f53","size":"10","style":[0,0,0],"color":"993366"}]]","msg_id":123223456,"clientid":"%s","psessionid":"%s"}""" % (to_id, self.clientid, str["psessionid"])
-        #print data
-        #data = "%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A" + "%s" % self.msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
-        #data = "%7B%22to%22%3A"+to_id+"%2C%22face%22%3A540%2C%22content%22%3A%22%5B%5C%22"+"123"+"%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A5150001%2C%22clientid%22%3A%22"+ ("%s" % self.clientid) +"%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
         #pdb.set_trace()
         print "send msg"
         url, data = self.set_sent_msg_post_data(to_id, to_where, msg)
@@ -256,7 +250,6 @@ def login(qq, pw):
     thread_qq.setDaemon(True)
     verify, uin = thread_qq.ret()
     exec("uin = '%s'" % uin)
-    #print uin
     pwd = pwd_encrypt(uin, pw, verify)
     pwd.md()
     pwd.md2()
@@ -280,7 +273,5 @@ if __name__ == "__main__":
     global verify_path
     qq, password, verify_path = Config.set_config()
     while 1:
-        #verifychar = raw_input()
-        #print verifychar
         login(qq, password)
         print "connected timeout, so login again"
