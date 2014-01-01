@@ -9,6 +9,7 @@ import threading as thread
 import time
 import pdb
 import ConfigParser
+import logging
 from cookielib import CookieJar
 
 
@@ -20,7 +21,7 @@ class pwd_encrypt():
         self.pw = pw
         self.verify = verify
 
-    def tobin(self, str):
+    def to_bin(self, str):
         arr = []
         for i in range(0, len(str), 2):
             arr.append("\\x" + str[i:i+2])
@@ -29,13 +30,11 @@ class pwd_encrypt():
         return arr
 
     def md(self):
-        self.pw1 = self.tobin(hashlib.md5(self.pw).hexdigest().upper())
-        #print self.pw1
+        self.pw1 = self.to_bin(hashlib.md5(self.pw).hexdigest().upper())
         return self.pw1
 
     def md2(self):
         self.pw2 = hashlib.md5(self.pw1+self.uin).hexdigest().upper()
-        #print self.pw2
         return self.pw2
 
     def md3(self):
@@ -46,8 +45,8 @@ class Config():
     @staticmethod
     def set_config():
         config = ConfigParser.RawConfigParser()
-        path = os.path.split(os.path.realpath(__file__))[0] + "/config"
-        config.read(path)
+        path = os.path.split(os.path.realpath(__file__))[0] 
+        config.read(path + "/config" )
         if config.get("qq_info", "qq") != "":
             qq = int(config.get("qq_info", "qq"))
         else:
@@ -60,10 +59,14 @@ class Config():
             verify_path = config.get("qq_info", "verify_path")
         else:
             raise "can not output verify img"
-        return qq, password, verify_path
-    
+        if config.get("debug", "log") == "":
+            log = path + "/log"
+        else:
+            log = config.get("debug", "log")
+        return qq, password, verify_path, log
 
-class check(thread.Thread):
+
+class QQ(thread.Thread):
     def __init__(self, qq):
         self.body_msg_id = 5000001
         self.qun_msg_id = 9000001
@@ -76,8 +79,8 @@ class check(thread.Thread):
         self.timeout = 0
 
     def check_(self):
-        check = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
-        self.data = self.opener.open(check).read()
+        check_url = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
+        self.data = self.opener.open(check_url).read()
         return self.data
 
     def get_verify(self, path):
@@ -92,7 +95,7 @@ class check(thread.Thread):
                 contain = self.opener.open(self.sign_url, timeout = 5).read()
                 flag = 0
             except:
-                print "timeout1"
+                debuger("timeout1")
         contain = contain[8:-2].split(",")[2]
         contain = contain[1:-1]
         #print contain
@@ -102,7 +105,7 @@ class check(thread.Thread):
                 self.opener.open(contain, timeout = 5).read()
                 flag = 0
             except:
-                print "timeout2"
+                debuger("timeout2")
         cook_ = self.cj._cookies.values()[1]
         cook_2 = self.cj
         temp = []
@@ -129,7 +132,7 @@ class check(thread.Thread):
         self.opener.addheaders.append(("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=2"))
         self.opener.addheaders.append(("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36"))
         req = urllib2.Request("http://d.web2.qq.com/channel/login2", data_)
-        print self.opener.addheaders
+        debuger(self.opener.addheaders)
         flag = 1
         while flag:
             try:
@@ -137,13 +140,9 @@ class check(thread.Thread):
                 flag = 0
             except:
                 pass
-        print self.jsondata
+        debuger(self.jsondata)
 
     def json_to_data(self, str):
-        #self.retcode = json.loads(str).values[0]
-        #print self.jsondata.__class__
-        #print json.loads(self.jsondata).values()
-        #import debug
         self.result = json.loads(self.jsondata).values()[1]
         return self.result
 
@@ -164,33 +163,29 @@ class check(thread.Thread):
             return sec.upper(), thi[1:-1]
 
     def heartbeat(self):
-        print "heart begin"
+        debuger("heart begin")
         str = self.json_to_data(self.jsondata)
         data = """{"clientid":"%s","psessionid":"%s","key":0,"ids":[]}""" % (self.clientid, str["psessionid"])
         data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, str["psessionid"])
-        #print data
-        #print self.opener.addheaders
         req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data)
         flag = 1
         while flag:
             try:
                 return self.opener.open(req).read()
             except:
-                print "get_server_msg_time_out"
+                debuger("get_server_msg_time_out")
 
     def post_msg_to_body_or_qun(self, to_id, msg, to_where):
-        #pdb.set_trace()
-        print "send msg"
+        debuger("send msg")
         url, data = self.set_sent_msg_post_data(to_id, to_where, msg)
         req = urllib2.Request(url, data.encode("utf8"))
-        #print data
         flag = 1
         while flag:
             try:
-                print self.opener.open(req, timeout=5).read()
+                debuger(self.opener.open(req, timeout=5).read())
                 flag = 0
             except:
-                print "send error"
+                debuger("send error")
 
     def set_sent_msg_post_data(self, to_id, to_where, msg):
         str = self.json_to_data(self.jsondata)
@@ -212,10 +207,10 @@ class check(thread.Thread):
         while 1:
             try:
                 if self.timeout == 1:
-                    print "heart end"
+                    debuger("heart end")
                     break
                 request_msg = self.heartbeat()
-                print request_msg
+                debuger(request_msg)
                 request_msg_to_json = json.loads(request_msg)
                 msg().return_from_tencent(request_msg_to_json)
             except:
@@ -231,22 +226,22 @@ class msg:
                     msg_context = res["value"]["content"][1]
                     msg_from = res["value"]["from_uin"]
                     to_where = res["poll_type"]
-                    print "from %s" % msg_from
-                    print "context %s" % msg_context
+                    debuger("from %s" % msg_from)
+                    debuger("context %s" % msg_context)
                     #pdb.set_trace()
                     try:
                         if thread_qq.timeout == 0:
                             thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
-                        print "error"
-        elif msg_data["retcode"] == 121 or msg_data["retcode"] == 100006 or msg_data["retcode"] == 120:
+                        debuger("error")
+        elif msg_data["retcode"] == 121 or msg_data["retcode"] == 100006 or msg_data["retcode"] == 120 or msg_data["retcode"] == 103:
             thread_qq.timeout = 1
          
 
 def login(qq, pw):
     time_now = time.localtime().tm_yday
     global thread_qq
-    thread_qq = check(qq)
+    thread_qq = QQ(qq)
     thread_qq.setDaemon(True)
     verify, uin = thread_qq.ret()
     exec("uin = '%s'" % uin)
@@ -257,21 +252,29 @@ def login(qq, pw):
     sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % fin_pw + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
     thread_qq.sign_url = sign_url
     thread_qq.login()
-    for i in range(0,3):
+    for i in range(0, 3):
         exec("thread%s = thread.Thread(target=thread_qq.run)" % i )
         exec("thread%s.setDaemon(True)" % i)
         exec("thread%s.start()" % i)
-        print "thread %s start \n" % i
+        debuger("thread %s start \n" % i)
         time.sleep(5) 
     while 1:
         if thread_qq.timeout == 1 or time_now != time.localtime().tm_yday:
             break
         time.sleep(100)
-    
+
+def debuger(msg):
+    try:
+        logging.basicConfig(filename = log, level = logging.DEBUG) 
+        logging.debug(msg)
+    except:
+        pass
+      
 if __name__ == "__main__":
-    print 2752878938
-    global verify_path
-    qq, password, verify_path = Config.set_config()
+    #print 2752878938
+    global verify_path, log
+    qq, password, verify_path, log = Config.set_config()
     while 1:
         login(qq, password)
-        print "connected timeout, so login again"
+        debuger("connected timeout, so login again")
+
