@@ -11,6 +11,7 @@ import pdb
 import ConfigParser
 import logging
 import traceback
+import random
 from cookielib import CookieJar
 
 
@@ -78,6 +79,7 @@ class QQ(thread.Thread):
         self.clientid = "52332159"
         thread.Thread.__init__(self)
         self.timeout = 0
+        self.captcha = random.random()
 
     def check_(self):
         check_url = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
@@ -91,21 +93,25 @@ class QQ(thread.Thread):
 
     def login(self):
         flag = 1
+        count = 0
         while flag:
             try:
                 contain = self.opener.open(self.sign_url, timeout = 5).read()
-                flag = 0
+                if count > 10: flag = 0
             except:
+                count += 1
                 debugger("timeout1")
         contain = contain[8:-2].split(",")[2]
         contain = contain[1:-1]
         #print contain
         flag = 1
+        count = 0
         while flag:
             try:
                 self.opener.open(contain, timeout = 5).read()
-                flag = 0
+                if count > 10: flag = 0
             except:
+                count += 1
                 debugger("timeout2")
         cook_ = self.cj._cookies.values()[1]
         cook_2 = self.cj
@@ -133,7 +139,7 @@ class QQ(thread.Thread):
         self.opener.addheaders.append(("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=2"))
         self.opener.addheaders.append(("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36"))
         req = urllib2.Request("http://d.web2.qq.com/channel/login2", data_)
-        debugger(self.opener.addheaders)
+        #debugger(self.opener.addheaders)
         flag = 1
         while flag:
             try:
@@ -205,9 +211,10 @@ class QQ(thread.Thread):
             
 
     def run(self):
+        captcha = self.captcha
         while 1:
             try:
-                if self.timeout == 1:
+                if self.timeout == 1 or self.captcha != captcha:
                     debugger("heart end")
                     break
                 request_msg = self.heartbeat()
