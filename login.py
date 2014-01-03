@@ -10,6 +10,7 @@ import time
 import pdb
 import ConfigParser
 import logging
+import traceback
 from cookielib import CookieJar
 
 
@@ -95,7 +96,7 @@ class QQ(thread.Thread):
                 contain = self.opener.open(self.sign_url, timeout = 5).read()
                 flag = 0
             except:
-                debuger("timeout1")
+                debugger("timeout1")
         contain = contain[8:-2].split(",")[2]
         contain = contain[1:-1]
         #print contain
@@ -105,7 +106,7 @@ class QQ(thread.Thread):
                 self.opener.open(contain, timeout = 5).read()
                 flag = 0
             except:
-                debuger("timeout2")
+                debugger("timeout2")
         cook_ = self.cj._cookies.values()[1]
         cook_2 = self.cj
         temp = []
@@ -132,15 +133,15 @@ class QQ(thread.Thread):
         self.opener.addheaders.append(("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=2"))
         self.opener.addheaders.append(("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36"))
         req = urllib2.Request("http://d.web2.qq.com/channel/login2", data_)
-        debuger(self.opener.addheaders)
+        debugger(self.opener.addheaders)
         flag = 1
         while flag:
             try:
                 self.jsondata = self.opener.open(req, timeout = 5).read()
                 flag = 0
             except:
-                pass
-        debuger(self.jsondata)
+                debugger(traceback.print_exc())
+        debugger(self.jsondata)
 
     def json_to_data(self, str):
         self.result = json.loads(self.jsondata).values()[1]
@@ -163,7 +164,7 @@ class QQ(thread.Thread):
             return sec.upper(), thi[1:-1]
 
     def heartbeat(self):
-        debuger("heart begin")
+        debugger("heart begin")
         str = self.json_to_data(self.jsondata)
         data = """{"clientid":"%s","psessionid":"%s","key":0,"ids":[]}""" % (self.clientid, str["psessionid"])
         data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, str["psessionid"])
@@ -173,19 +174,19 @@ class QQ(thread.Thread):
             try:
                 return self.opener.open(req).read()
             except:
-                debuger("get_server_msg_time_out")
+                debugger("get_server_msg_time_out")
 
     def post_msg_to_body_or_qun(self, to_id, msg, to_where):
-        debuger("send msg")
+        debugger("send msg")
         url, data = self.set_sent_msg_post_data(to_id, to_where, msg)
         req = urllib2.Request(url, data.encode("utf8"))
         flag = 1
         while flag:
             try:
-                debuger(self.opener.open(req, timeout=5).read())
+                debugger(self.opener.open(req, timeout=5).read())
                 flag = 0
             except:
-                debuger("send error")
+                debugger("send error")
 
     def set_sent_msg_post_data(self, to_id, to_where, msg):
         str = self.json_to_data(self.jsondata)
@@ -207,14 +208,14 @@ class QQ(thread.Thread):
         while 1:
             try:
                 if self.timeout == 1:
-                    debuger("heart end")
+                    debugger("heart end")
                     break
                 request_msg = self.heartbeat()
-                debuger(request_msg)
+                debugger(request_msg)
                 request_msg_to_json = json.loads(request_msg)
                 msg().return_from_tencent(request_msg_to_json)
             except:
-                pass
+                debugger(traceback.print_exc())
 
 
 class msg:
@@ -226,14 +227,14 @@ class msg:
                     msg_context = res["value"]["content"][1]
                     msg_from = res["value"]["from_uin"]
                     to_where = res["poll_type"]
-                    debuger("from %s" % msg_from)
-                    debuger("context %s" % msg_context)
+                    debugger("from %s" % msg_from)
+                    debugger("context %s" % msg_context)
                     #pdb.set_trace()
                     try:
                         if thread_qq.timeout == 0:
                             thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
-                        debuger("error")
+                        debugger("error")
         elif msg_data["retcode"] == 121 or msg_data["retcode"] == 100006 or msg_data["retcode"] == 120 or msg_data["retcode"] == 103:
             thread_qq.timeout = 1
          
@@ -256,17 +257,17 @@ def login(qq, pw):
         exec("thread%s = thread.Thread(target=thread_qq.run)" % i )
         exec("thread%s.setDaemon(True)" % i)
         exec("thread%s.start()" % i)
-        debuger("thread %s start \n" % i)
+        debugger("thread %s start \n" % i)
         time.sleep(5) 
     while 1:
         if thread_qq.timeout == 1 or time_now != time.localtime().tm_yday:
             break
         time.sleep(100)
 
-def debuger(msg):
+def debugger(msg):
     try:
         logging.basicConfig(filename = log, level = logging.DEBUG) 
-        logging.debug(msg)
+        logging.debug(msg + "  " + time.asctime())
     except:
         pass
       
@@ -276,5 +277,5 @@ if __name__ == "__main__":
     qq, password, verify_path, log = Config.set_config()
     while 1:
         login(qq, password)
-        debuger("connected timeout, so login again")
+        debugger("connected timeout, so login again")
 
