@@ -80,6 +80,7 @@ class QQ(thread.Thread):
         thread.Thread.__init__(self)
         self.timeout = 0
         self.captcha = random.random()
+        self.__psessionid = ""
 
     def check_(self):
         check_url = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
@@ -97,8 +98,9 @@ class QQ(thread.Thread):
         while flag:
             try:
                 contain = self.opener.open(self.sign_url, timeout = 5).read()
-                if count > 10: flag = 0
+                flag = 0
             except:
+                if count > 10: flag = 0
                 count += 1
                 debugger("timeout1")
         contain = contain[8:-2].split(",")[2]
@@ -109,8 +111,9 @@ class QQ(thread.Thread):
         while flag:
             try:
                 self.opener.open(contain, timeout = 5).read()
-                if count > 10: flag = 0
+                flag = 0
             except:
+                if count > 10: flag = 0
                 count += 1
                 debugger("timeout2")
         cook_ = self.cj._cookies.values()[1]
@@ -143,15 +146,11 @@ class QQ(thread.Thread):
         flag = 1
         while flag:
             try:
-                self.jsondata = self.opener.open(req, timeout = 5).read()
+                jsondata = self.opener.open(req, timeout = 5).read()
                 flag = 0
+                self.__psessionid = json.loads(jsondata).values()[1]["psessionid"]
             except:
                 debugger(traceback.print_exc())
-        debugger(self.jsondata)
-
-    def json_to_data(self, str):
-        self.result = json.loads(self.jsondata).values()[1]
-        return self.result
 
     def ret(self):
         self.check_()
@@ -171,9 +170,8 @@ class QQ(thread.Thread):
 
     def heartbeat(self):
         debugger("heart begin")
-        str = self.json_to_data(self.jsondata)
-        data = """{"clientid":"%s","psessionid":"%s","key":0,"ids":[]}""" % (self.clientid, str["psessionid"])
-        data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, str["psessionid"])
+        data = """{"clientid":"%s","psessionid":"%s","key":0,"ids":[]}""" % (self.clientid, self.__psessionid)
+        data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, self.__psessionid)
         req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data)
         flag = 1
         while flag:
@@ -195,18 +193,17 @@ class QQ(thread.Thread):
                 debugger("send error")
 
     def set_sent_msg_post_data(self, to_id, to_where, msg):
-        str = self.json_to_data(self.jsondata)
         to_id = "%s" % to_id
         data = "%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A" 
         if to_where == "message":
             self.body_msg_id = self.body_msg_id + 1
-            data = "%7B%22to%22%3A" + to_id + "%2C%22face%22%3A540" + data + "%s" % self.body_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
+            data = "%7B%22to%22%3A" + to_id + "%2C%22face%22%3A540" + data + "%s" % self.body_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % self.__psessionid) + "%22%7D"
             url = "http://d.web2.qq.com/channel/send_buddy_msg2"
         else:
             self.qun_msg_id = self.qun_msg_id + 1
-            data = "%7B%22group_uin%22%3A" + to_id + data + "%s" % self.qun_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % str["psessionid"]) + "%22%7D"
+            data = "%7B%22group_uin%22%3A" + to_id + data + "%s" % self.qun_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % self.__psessionid) + "%22%7D"
             url = "http://d.web2.qq.com/channel/send_qun_msg2" 
-        data = "r=%s&clientid=%s&psessionid=%s" % (data, self.clientid, str["psessionid"])
+        data = "r=%s&clientid=%s&psessionid=%s" % (data, self.clientid, self.__psessionid)
         return url, data
             
 
@@ -275,6 +272,7 @@ def debugger(msg):
     try:
         logging.basicConfig(filename = log, level = logging.DEBUG) 
         logging.debug(msg + "  " + time.asctime())
+        #print msg
     except:
         pass
       
