@@ -11,9 +11,11 @@ class Eve_Jump():
 
     def trans(self, cn):
         print cn
+        only = re.compile(ur"[\u4e00-\u9fa5a-z0-9/-]+")
+        cn = only.findall(cn)
         db = sql.connect(host = "127.0.0.1",user = "root", db = "eve", use_unicode=True, charset="utf8")
         cur = db.cursor()
-        cur.execute("select * from map where cn = '%s'" % cn)
+        cur.execute("select * from map where cn = '%s'" % cn[0])
         data = cur.fetchall()
         db.close()
         return data[0][1]
@@ -31,7 +33,7 @@ class Eve_Jump():
         count = self.data.count("link-5")
         p = re.compile(r'link-5-\d+')
         res = p.findall(self.data)
-        return res
+        return res, count
 
     def find_path(self, res):
         import pdb
@@ -50,10 +52,16 @@ class Eve_Jump():
         db.close()
         return result
 
-    def main(self, start, end, mode):
-        start = self.trans(start)
-        end = self.trans(end)
-        self.get_data("%s:%s:%s" % (mode, start, end))
-        path = self.parser_html()
-        return self.find_path(path)
+    def main(self, start, end, mode, category):
+        try:
+            start = self.trans(start)
+            end = self.trans(end)
+            self.get_data("%s:%s:%s" % (mode, start, end))
+            path = self.parser_html()
+            if category == 0:
+                return self.find_path(path[0])
+            else:
+                return u"%s 至 %s 共经过 %s 次跳跃。"
+        except:
+            return ""
 

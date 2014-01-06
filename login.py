@@ -206,7 +206,6 @@ class QQ(thread.Thread):
             url = "http://d.web2.qq.com/channel/send_qun_msg2" 
         data = "r=%s&clientid=%s&psessionid=%s" % (data, self.clientid, self.__psessionid)
         return url, data
-            
 
     def run(self):
         captcha = self.captcha
@@ -246,28 +245,46 @@ class msg:
             thread_qq.timeout = 1
 
     def choice_option(self, msg_context):
-        import pdb
-        print msg_context
+        #print msg_context
         #pdb.set_trace()
         if msg_context == "-h":
-            msg_context = u""".route 地点1 地点2  查询地点1至地点2路线"""
-            #print msg_context
+            msg_context = u""".route 地点1 地点2  查询地点1至地点2路线
+            .jump 地点1 地点2   查询地点1至地点2跳数
+            """
         elif msg_context[:7] == ".route1" or msg_context[:7] == ".route ":
             try:
                 path = msg_context.split(" ")
-                msg_context = EVE.main(path[1], path[2], 1)
+                msg_context = EVE.main(path[1], path[2], 1, 0)
             except:
                 msg_context = ""
         elif msg_context[:7] == ".route2":
             try:
                 path = msg_context.split(" ")
-                msg_context = EVE.main(path[1], path[2], 2)
+                msg_context = EVE.main(path[1], path[2], 2, 0)
             except:
                 msg_context = ""
         elif msg_context[:7] == ".route3":
             try:
                 path = msg_context.split(" ")
-                msg_context = EVE.main(path[1], path[2], 3)
+                msg_context = EVE.main(path[1], path[2], 3, 0)
+            except:
+                msg_context = ""
+        elif msg_context[:6] == ".jump " or msg_context[:6] == ".jump1":
+            try:
+                path = msg_context.split(" ")
+                msg_context = EVE.main(path[1], path[2], 1, 1)
+            except:
+                msg_context = ""
+        elif msg_context[:6] == ".jump2"
+            try:
+                path = msg_context.split(" ")
+                msg_context = EVE.main(path[1], path[2], 2, 1)
+            except:
+                msg_context = ""
+        elif msg_context[:6] == ".jump3"
+            try:
+                path = msg_context.split(" ")
+                msg_context = EVE.main(path[1], path[2], 3, 1)
             except:
                 msg_context = ""
         else:
@@ -290,7 +307,7 @@ def login(qq, pw):
     sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % fin_pw + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
     thread_qq.sign_url = sign_url
     thread_qq.login()
-    for i in range(0, 3):
+    for i in range(0, 5):
         exec("thread%s = thread.Thread(target=thread_qq.run)" % i )
         exec("thread%s.setDaemon(True)" % i)
         exec("thread%s.start()" % i)
