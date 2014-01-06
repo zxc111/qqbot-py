@@ -4,6 +4,7 @@ import os, sys
 import traceback
 import MySQLdb as sql
 import re
+import pdb
 
 class Eve_Jump():
     def __init__(self):
@@ -11,14 +12,17 @@ class Eve_Jump():
 
     def trans(self, cn):
         print cn
-        only = re.compile(ur"[\u4e00-\u9fa5a-z0-9/-]+")
+        #pdb.set_trace()
+        only = re.compile(ur"[\u4e00-\u9fa5a-z0-9A-Z/-]+")
         cn = only.findall(cn)
         db = sql.connect(host = "127.0.0.1",user = "root", db = "eve", use_unicode=True, charset="utf8")
         cur = db.cursor()
         cur.execute("select * from map where cn = '%s'" % cn[0])
         data = cur.fetchall()
         db.close()
-        return data[0][1]
+        data = data[0][1].strip(" ")
+        data = data.replace(" ", "_", data.count(" "))
+        return data
 
     def get_data(self, where):
         try:
@@ -33,10 +37,10 @@ class Eve_Jump():
         count = self.data.count("link-5")
         p = re.compile(r'link-5-\d+')
         res = p.findall(self.data)
+        print res
         return res, count
 
     def find_path(self, res):
-        import pdb
         result = ""
         i = 0
         db = sql.connect(host = "127.0.0.1",user = "root", db = "eve", use_unicode=True, charset="utf8")
@@ -54,10 +58,14 @@ class Eve_Jump():
 
     def main(self, start, end, mode, category):
         try:
-            start = self.trans(start)
-            end = self.trans(end)
-            self.get_data("%s:%s:%s" % (mode, start, end))
+            #pdb.set_trace()
+            start_en = self.trans(start)
+            print start_en
+            end_en = self.trans(end)
+            print end_en
+            self.get_data("%s:%s:%s" % (mode, start_en, end_en))
             path = self.parser_html()
+            print path
             if category == 0:
                 return self.find_path(path[0])
             else:

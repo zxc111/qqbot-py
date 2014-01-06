@@ -237,6 +237,7 @@ class msg:
                         if thread_qq.timeout == 0:
                             print msg_context
                             msg_context = self.choice_option(msg_context.strip())
+                            print msg_context
                             if msg_context != "":
                                 thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
@@ -248,13 +249,13 @@ class msg:
         #print msg_context
         #pdb.set_trace()
         if msg_context == "-h":
-            msg_context = u""".route 地点1 地点2  查询地点1至地点2路线
-            .jump 地点1 地点2   查询地点1至地点2跳数
-            """
+            msg_context = u".route 地点1 地点2  查询地点1至地点2路线"
         elif msg_context[:7] == ".route1" or msg_context[:7] == ".route ":
             try:
                 path = msg_context.split(" ")
+                print path
                 msg_context = EVE.main(path[1], path[2], 1, 0)
+                print msg_context
             except:
                 msg_context = ""
         elif msg_context[:7] == ".route2":
@@ -289,7 +290,9 @@ class msg:
                 msg_context = ""
         else:
             msg_context = ""
+        print 111111111111121
         print msg_context
+        print 111111111111111
         return msg_context
          
 
