@@ -275,13 +275,13 @@ class msg:
                 msg_context = EVE.main(path[1], path[2], 1, 1)
             except:
                 msg_context = ""
-        elif msg_context[:6] == ".jump2"
+        elif msg_context[:6] == ".jump2":
             try:
                 path = msg_context.split(" ")
                 msg_context = EVE.main(path[1], path[2], 2, 1)
             except:
                 msg_context = ""
-        elif msg_context[:6] == ".jump3"
+        elif msg_context[:6] == ".jump3":
             try:
                 path = msg_context.split(" ")
                 msg_context = EVE.main(path[1], path[2], 3, 1)
@@ -334,4 +334,5 @@ if __name__ == "__main__":
     while 1:
         login(qq, password)
         debugger("connected timeout, so login again")
+
 
