@@ -61,7 +61,7 @@ class Eve_Jump():
             if category == 0:
                 return self.find_path(path[0])
             else:
-                return u"%s 至 %s 共经过 %s 次跳跃。"
+                return u"%s 至 %s 共经过 %s 次跳跃。" % (start, end, path[1])
         except:
             return ""
 
