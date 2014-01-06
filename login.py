@@ -12,6 +12,7 @@ import ConfigParser
 import logging
 import traceback
 import random
+import eve_mod
 from cookielib import CookieJar
 
 
@@ -174,7 +175,7 @@ class QQ(thread.Thread):
         data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, self.__psessionid)
         req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data)
         flag = 1
-        while flag:
+        while flag and thread_qq.timeout == 0:
             try:
                 return self.opener.open(req).read()
             except:
@@ -233,14 +234,46 @@ class msg:
                     to_where = res["poll_type"]
                     debugger("from %s" % msg_from)
                     debugger("context %s" % msg_context)
-                    #pdb.set_trace()
                     try:
                         if thread_qq.timeout == 0:
-                            thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
+                            print msg_context
+                            msg_context = self.choice_option(msg_context.strip())
+                            if msg_context != "":
+                                thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
                         debugger("error")
         elif msg_data["retcode"] == 121 or msg_data["retcode"] == 100006 or msg_data["retcode"] == 120 or msg_data["retcode"] == 103:
             thread_qq.timeout = 1
+
+    def choice_option(self, msg_context):
+        import pdb
+        print msg_context
+        #pdb.set_trace()
+        if msg_context == "-h":
+            msg_context = u""".route 地点1 地点2  查询地点1至地点2路线"""
+            #print msg_context
+        elif msg_context[:7] == ".route1" or msg_context[:7] == ".route ":
+            try:
+                path = msg_context.split(" ")
+                msg_context = EVE.main(path[1], path[2], 1)
+            except:
+                msg_context = ""
+        elif msg_context[:7] == ".route2":
+            try:
+                path = msg_context.split(" ")
+                msg_context = EVE.main(path[1], path[2], 2)
+            except:
+                msg_context = ""
+        elif msg_context[:7] == ".route3":
+            try:
+                path = msg_context.split(" ")
+                msg_context = EVE.main(path[1], path[2], 3)
+            except:
+                msg_context = ""
+        else:
+            msg_context = ""
+        print msg_context
+        return msg_context
          
 
 def login(qq, pw):
@@ -278,7 +311,8 @@ def debugger(msg):
       
 if __name__ == "__main__":
     #print 2752878938
-    global verify_path, log
+    global verify_path, log, EVE
+    EVE = eve_mod.Eve_Jump()
     qq, password, verify_path, log = Config.set_config()
     while 1:
         login(qq, password)
