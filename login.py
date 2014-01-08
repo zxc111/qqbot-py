@@ -183,12 +183,15 @@ class QQ(thread.Thread):
         url, data = self.set_sent_msg_post_data(to_id, to_where, msg)
         req = urllib2.Request(url, data.encode("utf8"))
         flag = 1
+        i = 0
         while flag:
             try:
                 debugger(self.opener.open(req, timeout=5).read())
                 flag = 0
+                i += 1
             except:
-                debugger("send error")
+                debugger(traceback.print_exc())
+                if i > 10: flag = 0
 
     def set_sent_msg_post_data(self, to_id, to_where, msg):
         to_id = "%s" % to_id
@@ -245,7 +248,7 @@ class msg:
     def choice_option(self, msg_context):
         #pdb.set_trace()
         if msg_context == "-h":
-            msg_context = u"-route 地点1 地点2  查询地点1至地点2路线.\r-jump 地点1 地点2  查询地点1至地点2跳数\r-hole 虫洞编号  查询该虫洞信息"
+            msg_context = u"-route 地点1 地点2  查询地点1至地点2路线\r -jump 地点1 地点2  查询地点1至地点2跳数\r -hole 虫洞编号  查询该虫洞信息"
         elif msg_context[:7] == "-route1" or msg_context[:7] == "-route ":
             try:
                 path = msg_context.split(" ")
