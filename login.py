@@ -181,7 +181,7 @@ class QQ(thread.Thread):
     def post_msg_to_body_or_qun(self, to_id, msg, to_where):
         debugger("send msg")
         url, data = self.set_sent_msg_post_data(to_id, to_where, msg)
-        req = urllib2.Request(url, data.encode("utf8"))
+        req = urllib2.Request(url, urllib.quote(data.encode("utf8")))
         flag = 1
         i = 0
         while flag:
@@ -289,7 +289,8 @@ class msg:
         elif msg_context[:5] == "-hole":
             try:
                 path = msg_context.split(" ")
-                msg_context = EVE.find_hole(path)
+                print path
+                msg_context = EVE.find_hole(path[1])
             except:
                 msg_context = ""
         else:
