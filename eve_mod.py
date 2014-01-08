@@ -10,7 +10,7 @@ class Eve_Jump():
     def __init__(self):
         self.url = "http://evemaps.dotlan.net/route/"
         self.db = sql.connect(host = "127.0.0.1",user = "root", db = "eve", use_unicode=True, charset="utf8")
-        self.cur = db.cursor()
+        self.cur = self.db.cursor()
 
     def translation_cn_to_en(self, cn):
         #pdb.set_trace()
@@ -18,7 +18,6 @@ class Eve_Jump():
         cn = only.findall(cn)
         self.cur.execute("select * from map where cn = '%s'" % cn[0])
         data = self.cur.fetchall()
-        db.close()
         data = data[0][1].strip(" ")
         data = data.replace(" ", "_", data.count(" "))
         return data
@@ -50,7 +49,6 @@ class Eve_Jump():
             current = "%s:%s" % (i, data[0][2])
             result = "%s %s" % (result, current)
         #print result
-        db.close()
         return result
 
     ###NOTE: category 0: route, 1: jump_count. 
