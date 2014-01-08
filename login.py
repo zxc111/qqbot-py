@@ -106,7 +106,6 @@ class QQ(thread.Thread):
                 debugger("timeout1")
         contain = contain[8:-2].split(",")[2]
         contain = contain[1:-1]
-        #print contain
         flag = 1
         count = 0
         while flag:
@@ -135,10 +134,8 @@ class QQ(thread.Thread):
             "passwd_sig":"",
             "clientid":"52332159",
             "psessionid":null}""" % (ptweb)
-        #print ptweb
         data_ = urllib.quote(login)
         data_ = "r=%s&clientid=52332159&psessionid=null" % data_
-        #print data_
         self.opener.addheaders.append(("Content-Type", "application/x-www-form-urlencoded"))
         self.opener.addheaders.append(("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=2"))
         self.opener.addheaders.append(("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36"))
@@ -235,9 +232,9 @@ class msg:
                     debugger("context %s" % msg_context)
                     try:
                         if thread_qq.timeout == 0:
-                            print msg_context
+                            #print msg_context
                             msg_context = self.choice_option(msg_context.strip())
-                            print msg_context
+                            #print msg_context
                             if msg_context != "":
                                 thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
@@ -246,53 +243,48 @@ class msg:
             thread_qq.timeout = 1
 
     def choice_option(self, msg_context):
-        #print msg_context
         #pdb.set_trace()
         if msg_context == "-h":
             msg_context = u".route 地点1 地点2  查询地点1至地点2路线"
         elif msg_context[:7] == ".route1" or msg_context[:7] == ".route ":
             try:
                 path = msg_context.split(" ")
-                print path
-                msg_context = EVE.main(path[1], path[2], 1, 0)
+                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 0)
                 print msg_context
             except:
                 msg_context = ""
         elif msg_context[:7] == ".route2":
             try:
                 path = msg_context.split(" ")
-                msg_context = EVE.main(path[1], path[2], 2, 0)
+                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 2, 0)
             except:
                 msg_context = ""
         elif msg_context[:7] == ".route3":
             try:
                 path = msg_context.split(" ")
-                msg_context = EVE.main(path[1], path[2], 3, 0)
+                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 3, 0)
             except:
                 msg_context = ""
         elif msg_context[:6] == ".jump " or msg_context[:6] == ".jump1":
             try:
                 path = msg_context.split(" ")
-                msg_context = EVE.main(path[1], path[2], 1, 1)
+                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 1)
             except:
                 msg_context = ""
         elif msg_context[:6] == ".jump2":
             try:
                 path = msg_context.split(" ")
-                msg_context = EVE.main(path[1], path[2], 2, 1)
+                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 2, 1)
             except:
                 msg_context = ""
         elif msg_context[:6] == ".jump3":
             try:
                 path = msg_context.split(" ")
-                msg_context = EVE.main(path[1], path[2], 3, 1)
+                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 3, 1)
             except:
                 msg_context = ""
         else:
             msg_context = ""
-        print 111111111111121
-        print msg_context
-        print 111111111111111
         return msg_context
          
 
@@ -325,7 +317,6 @@ def debugger(msg):
     try:
         logging.basicConfig(filename = log, level = logging.DEBUG) 
         logging.debug(msg + "  " + time.asctime())
-        #print msg
     except:
         pass
       

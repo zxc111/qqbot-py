@@ -9,16 +9,15 @@ import pdb
 class Eve_Jump():
     def __init__(self):
         self.url = "http://evemaps.dotlan.net/route/"
+        self.db = sql.connect(host = "127.0.0.1",user = "root", db = "eve", use_unicode=True, charset="utf8")
+        self.cur = db.cursor()
 
-    def trans(self, cn):
-        print cn
+    def translation_cn_to_en(self, cn):
         #pdb.set_trace()
         only = re.compile(ur"[\u4e00-\u9fa5a-z0-9A-Z/-]+")
         cn = only.findall(cn)
-        db = sql.connect(host = "127.0.0.1",user = "root", db = "eve", use_unicode=True, charset="utf8")
-        cur = db.cursor()
-        cur.execute("select * from map where cn = '%s'" % cn[0])
-        data = cur.fetchall()
+        self.cur.execute("select * from map where cn = '%s'" % cn[0])
+        data = self.cur.fetchall()
         db.close()
         data = data[0][1].strip(" ")
         data = data.replace(" ", "_", data.count(" "))
@@ -43,12 +42,10 @@ class Eve_Jump():
     def find_path(self, res):
         result = ""
         i = 0
-        db = sql.connect(host = "127.0.0.1",user = "root", db = "eve", use_unicode=True, charset="utf8")
-        cur = db.cursor()
         for id in res:
             i += 1
-            cur.execute("select * from map where id = %s" % int(id[7:]))
-            data = cur.fetchall()
+            self.cur.execute("select * from map where id = %s" % int(id[7:]))
+            data = self.cur.fetchall()
             #print data[0]
             current = "%s:%s" % (i, data[0][2])
             result = "%s %s" % (result, current)
@@ -56,13 +53,13 @@ class Eve_Jump():
         db.close()
         return result
 
-    def main(self, start, end, mode, category):
+    ###NOTE: category 0: route, 1: jump_count. 
+    ###      mode: 1:fast route, 2:highSec, 3:low/0.0 Sec
+    def find_solarSystem_jump_or_route(self, start, end, mode, category):
         try:
             #pdb.set_trace()
-            start_en = self.trans(start)
-            print start_en
-            end_en = self.trans(end)
-            print end_en
+            start_en = self.translation_cn_to_en(start)
+            end_en = self.translation_cn_to_en(end)
             self.get_data("%s:%s:%s" % (mode, start_en, end_en))
             path = self.parser_html()
             print path
