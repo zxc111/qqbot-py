@@ -245,42 +245,48 @@ class msg:
     def choice_option(self, msg_context):
         #pdb.set_trace()
         if msg_context == "-h":
-            msg_context = u".route 地点1 地点2  查询地点1至地点2路线"
-        elif msg_context[:7] == ".route1" or msg_context[:7] == ".route ":
+            msg_context = u"-route 地点1 地点2  查询地点1至地点2路线.\r-jump 地点1 地点2  查询地点1至地点2跳数\r-hole 虫洞编号  查询该虫洞信息"
+        elif msg_context[:7] == "-route1" or msg_context[:7] == "-route ":
             try:
                 path = msg_context.split(" ")
                 msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 0)
                 print msg_context
             except:
                 msg_context = ""
-        elif msg_context[:7] == ".route2":
+        elif msg_context[:7] == "-route2":
             try:
                 path = msg_context.split(" ")
                 msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 2, 0)
             except:
                 msg_context = ""
-        elif msg_context[:7] == ".route3":
+        elif msg_context[:7] == "-route3":
             try:
                 path = msg_context.split(" ")
                 msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 3, 0)
             except:
                 msg_context = ""
-        elif msg_context[:6] == ".jump " or msg_context[:6] == ".jump1":
+        elif msg_context[:6] == "-jump " or msg_context[:6] == "-jump1":
             try:
                 path = msg_context.split(" ")
                 msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 1)
             except:
                 msg_context = ""
-        elif msg_context[:6] == ".jump2":
+        elif msg_context[:6] == "-jump2":
             try:
                 path = msg_context.split(" ")
                 msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 2, 1)
             except:
                 msg_context = ""
-        elif msg_context[:6] == ".jump3":
+        elif msg_context[:6] == "-jump3":
             try:
                 path = msg_context.split(" ")
                 msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 3, 1)
+            except:
+                msg_context = ""
+        elif msg_context[:5] == "-hole":
+            try:
+                path = msg_context.split(" ")
+                msg_context = EVE.find_hole(path)
             except:
                 msg_context = ""
         else:
