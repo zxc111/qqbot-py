@@ -16,40 +16,12 @@ import eve_mod
 from cookielib import CookieJar
 
 
-class pwd_encrypt():
-    def __init__(self, uin, pw, verify):
-        self.pw1 = ""
-        self.pw2 = ""
-        self.uin = uin
-        self.pw = pw
-        self.verify = verify
-
-    def to_bin(self, str):
-        arr = []
-        for i in range(0, len(str), 2):
-            arr.append("\\x" + str[i:i+2])
-        arr = "".join(arr)
-        exec ("arr = '%s'" % arr)
-        return arr
-
-    def md(self):
-        self.pw1 = self.to_bin(hashlib.md5(self.pw).hexdigest().upper())
-        return self.pw1
-
-    def md2(self):
-        self.pw2 = hashlib.md5(self.pw1+self.uin).hexdigest().upper()
-        return self.pw2
-
-    def md3(self):
-        return hashlib.md5(self.pw2 + self.verify).hexdigest().upper()
-
-
 class Config():
     @staticmethod
     def set_config():
         config = ConfigParser.RawConfigParser()
-        path = os.path.split(os.path.realpath(__file__))[0] 
-        config.read(path + "/config" )
+        path = os.path.split(os.path.realpath(__file__))[0]
+        config.read(path + "/config")
         if config.get("qq_info", "qq") != "":
             qq = int(config.get("qq_info", "qq"))
         else:
@@ -166,8 +138,8 @@ class QQ(thread.Thread):
             sec = verifychar
             return sec.upper(), thi[1:-1]
 
-    def heartbeat(self):
-        debugger("heart begin")
+    def keep_live(self):
+        debugger("send_to_keep_live begin")
         data = """{"clientid":"%s","psessionid":"%s","key":0,"ids":[]}""" % (self.clientid, self.__psessionid)
         data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, self.__psessionid)
         req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data)
@@ -186,16 +158,16 @@ class QQ(thread.Thread):
         i = 0
         while flag:
             try:
+                i += 1
                 debugger(self.opener.open(req, timeout=5).read())
                 flag = 0
-                i += 1
             except:
                 debugger(traceback.print_exc())
                 if i > 10: flag = 0
 
     def set_sent_msg_post_data(self, to_id, to_where, msg):
         to_id = "%s" % to_id
-        data = "%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A" 
+        data = "%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A"
         if to_where == "message":
             self.body_msg_id = self.body_msg_id + 1
             data = "%7B%22to%22%3A" + to_id + "%2C%22face%22%3A540" + data + "%s" % self.body_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % self.__psessionid) + "%22%7D"
@@ -203,7 +175,7 @@ class QQ(thread.Thread):
         else:
             self.qun_msg_id = self.qun_msg_id + 1
             data = "%7B%22group_uin%22%3A" + to_id + data + "%s" % self.qun_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % self.__psessionid) + "%22%7D"
-            url = "http://d.web2.qq.com/channel/send_qun_msg2" 
+            url = "http://d.web2.qq.com/channel/send_qun_msg2"
         data = "r=%s&clientid=%s&psessionid=%s" % (data, self.clientid, self.__psessionid)
         return url, data
 
@@ -212,9 +184,9 @@ class QQ(thread.Thread):
         while 1:
             try:
                 if self.timeout == 1 or self.captcha != captcha:
-                    debugger("heart end")
+                    debugger("keep_live end and ready reset")
                     break
-                request_msg = self.heartbeat()
+                request_msg = self.keep_live()
                 debugger(request_msg)
                 request_msg_to_json = json.loads(request_msg)
                 msg().return_from_tencent(request_msg_to_json)
@@ -237,8 +209,9 @@ class msg:
                         if thread_qq.timeout == 0:
                             #print msg_context
                             msg_context = self.choice_option(msg_context.strip())
-                            #print msg_context
-                            if msg_context != "":
+                            print msg
+                            print msg_context
+                            if msg_context != "111":
                                 thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
                         debugger("error")
@@ -247,8 +220,9 @@ class msg:
 
     def choice_option(self, msg_context):
         #pdb.set_trace()
+        print msg_context
         if msg_context == "-h":
-            msg_context = u"-route 地点1 地点2  查询地点1至地点2路线\\r -jump 地点1 地点2  查询地点1至地点2跳数\\r -hole 虫洞编号  查询该虫洞信息"
+            msg_context = u"-route 地点1 地点2  查询地点1至地点2路线\\\\n-jump 地点1 地点2  查询地点1至地点2跳数\\\\n-hole 虫洞编号  查询该虫洞信息"
         elif msg_context[:7] == "-route1" or msg_context[:7] == "-route ":
             try:
                 path = msg_context.split(" ")
@@ -296,7 +270,19 @@ class msg:
         else:
             msg_context = ""
         return msg_context
-         
+
+def to_bin(str):
+    bin = []
+    for i in range(0, len(str), 2):
+        bin.append("\\x" + str[i : i + 2])
+    bin = "".join(bin)
+    exec ("bin = '%s'" % bin)
+    return bin
+
+def translate_passwd(uin, pw, verify):
+    pw1 = to_bin(hashlib.md5(pw).hexdigest().upper())
+    pw2 = hashlib.md5(pw1 + uin).hexdigest().upper()
+    return hashlib.md5(pw2 + verify).hexdigest().upper()
 
 def login(qq, pw):
     time_now = time.localtime().tm_yday
@@ -305,38 +291,34 @@ def login(qq, pw):
     thread_qq.setDaemon(True)
     verify, uin = thread_qq.ret()
     exec("uin = '%s'" % uin)
-    pwd = pwd_encrypt(uin, pw, verify)
-    pwd.md()
-    pwd.md2()
-    fin_pw = pwd.md3()
-    sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % fin_pw + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
+    password = translate_passwd(uin, pw, verify)
+    sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % password + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
     thread_qq.sign_url = sign_url
     thread_qq.login()
     for i in range(0, 5):
-        exec("thread%s = thread.Thread(target=thread_qq.run)" % i )
+        exec("thread%s = thread.Thread(target=thread_qq.run)" % i)
         exec("thread%s.setDaemon(True)" % i)
         exec("thread%s.start()" % i)
         debugger("thread %s start \n" % i)
-        time.sleep(5) 
+        time.sleep(5)
     while 1:
         if thread_qq.timeout == 1 or time_now != time.localtime().tm_yday:
             break
         time.sleep(100)
 
+
 def debugger(msg):
     try:
-        logging.basicConfig(filename = log, level = logging.DEBUG) 
+        logging.basicConfig(filename = log, level = logging.DEBUG)
         logging.debug(msg + "  " + time.asctime())
     except:
         pass
-      
+
 if __name__ == "__main__":
-    #print 2752878938
     global verify_path, log, EVE
     EVE = eve_mod.Eve_Jump()
     qq, password, verify_path, log = Config.set_config()
     while 1:
         login(qq, password)
         debugger("connected timeout, so login again")
-
 
