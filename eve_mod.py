@@ -12,8 +12,13 @@ import pdb
 class Eve_Jump():
     def __init__(self):
         self.url = "http://evemaps.dotlan.net/route/"
-        self.db = sql.connect(host = "127.0.0.1", user = "root", db = "eve", use_unicode=True, charset="utf8")
-        self.cur = self.db.cursor()
+
+    def connect_sql(self):
+        try:
+            self.db = sql.connect(host = "127.0.0.1", user = "root", db = "eve", use_unicode=True, charset="utf8")
+            self.cur = self.db.cursor()
+        except:
+            traceback.print_exc()
 
     def translation_cn_to_en(self, cn):
         only = re.compile(ur"[\u4e00-\u9fa5a-z0-9A-Z/-]+")
@@ -28,7 +33,7 @@ class Eve_Jump():
         try:
             self.data = urllib.urlopen(self.url + where).read()
         except:
-            print traceback.print_exc()
+            traceback.print_exc()
             return "error"
 
     def parser_html(self):
@@ -38,7 +43,7 @@ class Eve_Jump():
         count = self.data.count("link-5")
         p = re.compile(r'link-5-\d+')
         res = p.findall(self.data)
-        print res
+        #print res
         return res, count
 
     def find_path(self, res):
@@ -57,6 +62,7 @@ class Eve_Jump():
     ###NOTE: category 0: route, 1: jump_count. 
     ###      mode: 1:fast route, 2:highSec, 3:low/0.0 Sec
     def find_solarSystem_jump_or_route(self, start, end, mode, category):
+        self.connect_sql()
         try:
             #pdb.set_trace()
             print start, end
@@ -68,12 +74,14 @@ class Eve_Jump():
             if category == 0:
                 return self.find_path(path[0])
             else:
-                return u"%s 至 %s 共经过 %s 次跳跃。" % (start, end, path[1])
+                return u"%s 至 %s 共经过 %s 次跳跃。" % (start, end, path[1] - 1)
         except:
-            print traceback.print_exc()
+            self.db.close()
+            traceback.print_exc()
             return ""
 
     def find_hole(self, id):
+        self.connect_sql()
         try:
             id = id.upper()
             only = re.compile(ur"[\u4e00-\u9fa5a-z0-9A-Z/-]+")
@@ -90,5 +98,6 @@ class Eve_Jump():
             else:
                 return u"无该洞资料"
         except:
-            print traceback.print_exc()
+            self.db.close()
+            traceback.print_exc()
             return u"无该洞资料."

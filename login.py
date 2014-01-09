@@ -195,10 +195,13 @@ class QQ(thread.Thread):
 
 
 class msg:
+    def __init__(self):
+        self.error_code = [121, 100006, 120, 103]
     def return_from_tencent(self, msg_data):
         if msg_data["retcode"] == 0:
             for msg in msg_data["result"]:
                 res = msg
+                print msg
                 if res["poll_type"] == "message" or res["poll_type"] == "group_message":
                     msg_context = res["value"]["content"][1]
                     msg_from = res["value"]["from_uin"]
@@ -207,15 +210,13 @@ class msg:
                     debugger("context %s" % msg_context)
                     try:
                         if thread_qq.timeout == 0:
-                            #print msg_context
                             msg_context = self.choice_option(msg_context.strip())
-                            print msg
                             print msg_context
-                            if msg_context != "111":
+                            if msg_context != "":
                                 thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
-                        debugger("error")
-        elif msg_data["retcode"] == 121 or msg_data["retcode"] == 100006 or msg_data["retcode"] == 120 or msg_data["retcode"] == 103:
+                        debugger(traceback.print_exc())
+        elif msg_data["retcode"] in self.error_code:
             thread_qq.timeout = 1
 
     def choice_option(self, msg_context):
@@ -312,7 +313,7 @@ def debugger(msg):
         logging.basicConfig(filename = log, level = logging.DEBUG)
         logging.debug(msg + "  " + time.asctime())
     except:
-        pass
+        traceback.print_exc()
 
 if __name__ == "__main__":
     global verify_path, log, EVE
