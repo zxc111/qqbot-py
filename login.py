@@ -73,9 +73,9 @@ class QQ(thread.Thread):
                 contain = self.opener.open(self.sign_url, timeout = 5).read()
                 flag = 0
             except:
+                debugger(catch_error())
                 if count > 10: flag = 0
                 count += 1
-                debugger("timeout1")
         contain = contain[8:-2].split(",")[2]
         contain = contain[1:-1]
         flag = 1
@@ -85,9 +85,9 @@ class QQ(thread.Thread):
                 self.opener.open(contain, timeout = 5).read()
                 flag = 0
             except:
+                debugger(catch_error())
                 if count > 10: flag = 0
                 count += 1
-                debugger("timeout2")
         cook_ = self.cj._cookies.values()[1]
         cook_2 = self.cj
         temp = []
@@ -120,7 +120,7 @@ class QQ(thread.Thread):
                 flag = 0
                 self.__psessionid = json.loads(jsondata).values()[1]["psessionid"]
             except:
-                debugger(traceback.print_exc())
+                debugger(catch_error())
 
     def ret(self):
         self.check_()
@@ -139,7 +139,7 @@ class QQ(thread.Thread):
             return sec.upper(), thi[1:-1]
 
     def keep_live(self):
-        debugger("send_to_keep_live begin")
+        print "send_to_keep_live begin"
         data = """{"clientid":"%s","psessionid":"%s","key":0,"ids":[]}""" % (self.clientid, self.__psessionid)
         data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, self.__psessionid)
         req = urllib2.Request("http://d.web2.qq.com/channel/poll2", data)
@@ -148,7 +148,7 @@ class QQ(thread.Thread):
             try:
                 return self.opener.open(req).read()
             except:
-                debugger("get_server_msg_time_out")
+                debugger(catch_error())
 
     def post_msg_to_body_or_qun(self, to_id, msg, to_where):
         debugger("send msg")
@@ -162,7 +162,7 @@ class QQ(thread.Thread):
                 debugger(self.opener.open(req, timeout=5).read())
                 flag = 0
             except:
-                debugger(traceback.print_exc())
+                debugger(catch_error())
                 if i > 10: flag = 0
 
     def set_sent_msg_post_data(self, to_id, to_where, msg):
@@ -182,21 +182,28 @@ class QQ(thread.Thread):
     def run(self):
         captcha = self.captcha
         while 1:
+            flag = 0
             try:
                 if self.timeout == 1 or self.captcha != captcha:
                     debugger("keep_live end and ready reset")
                     break
                 request_msg = self.keep_live()
                 debugger(request_msg)
-                request_msg_to_json = json.loads(request_msg)
-                msg().return_from_tencent(request_msg_to_json)
+                if request_msg.__class__ == "".__class__:
+                    request_msg_to_json = json.loads(request_msg)
+                    msg().return_from_tencent(request_msg_to_json)
+                else:
+                    debugger(request_msg)
+                    flag += 1
             except:
-                debugger(traceback.print_exc())
+                if flag > 15: self.timeout = 1
+                debugger(catch_error())
 
 
 class msg:
     def __init__(self):
         self.error_code = [121, 100006, 120, 103]
+
     def return_from_tencent(self, msg_data):
         if msg_data["retcode"] == 0:
             for msg in msg_data["result"]:
@@ -215,7 +222,7 @@ class msg:
                             if msg_context != "":
                                 thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
-                        debugger(traceback.print_exc())
+                        debugger(catch_error())
         elif msg_data["retcode"] in self.error_code:
             thread_qq.timeout = 1
 
@@ -313,7 +320,12 @@ def debugger(msg):
         logging.basicConfig(filename = log, level = logging.DEBUG)
         logging.debug(msg + "  " + time.asctime())
     except:
-        traceback.print_exc()
+        debugger(catch_error())
+
+def catch_error():
+    exc_info = traceback.format_exc()
+    print exc_info
+    return exc_info
 
 if __name__ == "__main__":
     global verify_path, log, EVE
