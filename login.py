@@ -227,7 +227,7 @@ class msg:
             thread_qq.timeout = 1
 
     def choice_option(self, msg_context):
-        pdb.set_trace()
+        #pdb.set_trace()
         print msg_context
         if msg_context.__class__ == u"".__class__:
             msg_context = msg_context.strip()
