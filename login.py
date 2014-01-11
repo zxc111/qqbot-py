@@ -217,7 +217,7 @@ class msg:
                     debugger("context %s" % msg_context)
                     try:
                         if thread_qq.timeout == 0:
-                            msg_context = self.choice_option(msg_context.strip())
+                            msg_context = self.choice_option(msg_context)
                             print msg_context
                             if msg_context != "":
                                 thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
@@ -227,7 +227,12 @@ class msg:
             thread_qq.timeout = 1
 
     def choice_option(self, msg_context):
-        #pdb.set_trace()
+        pdb.set_trace()
+        print msg_context
+        if msg_context.__class__ == u"".__class__:
+            msg_context = msg_context.strip()
+        else:
+            return ""
         print msg_context
         if msg_context == "-h":
             msg_context = u"-route 地点1 地点2  查询地点1至地点2路线\\\\n-jump 地点1 地点2  查询地点1至地点2跳数\\\\n-hole 虫洞编号  查询该虫洞信息"
