@@ -56,9 +56,12 @@ class QQ(thread.Thread):
         self.__psessionid = ""
 
     def check_(self):
-        check_url = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
-        self.data = self.opener.open(check_url).read()
-        return self.data
+        try:
+            check_url = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
+            data = self.opener.open(check_url).read()
+            return data
+        except:
+            debugger(catch_error())
 
     def get_verify(self, path):
         verify_jpg = "http://captcha.qq.com/getimage?aid=1003903&&uin=%s" % self.qq + "&vc_type=%s" % path
@@ -123,9 +126,7 @@ class QQ(thread.Thread):
                 debugger(catch_error())
 
     def ret(self):
-        self.check_()
-        data = self.data
-        data = data[13: -2]
+        data = self.check_()[13 : -2]
         fir, sec, thi = data.split(",")
         if fir[1:-1] == "0":
             return sec[1:-1], thi[1:-1]
