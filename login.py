@@ -185,19 +185,19 @@ class QQ(thread.Thread):
         while 1:
             flag = 0
             try:
-                if self.timeout == 1 or self.captcha != captcha:
+                if thread_qq.timeout == 1 or self.captcha != captcha:
                     debugger("keep_live end and ready reset")
                     break
                 request_msg = self.keep_live()
-                debugger(request_msg)
                 if request_msg.__class__ == "".__class__:
                     request_msg_to_json = json.loads(request_msg)
                     msg().return_from_tencent(request_msg_to_json)
                 else:
-                    debugger(request_msg)
                     flag += 1
+                    if flag > 15: thread_qq.timeout = 1
+                    debugger("msg_get_error")
             except:
-                if flag > 15: self.timeout = 1
+                if flag > 15: thread_qq.timeout = 1
                 debugger(catch_error())
 
 
@@ -229,7 +229,7 @@ class msg:
 
     def choice_option(self, msg_context):
         #pdb.set_trace()
-        print msg_context
+        #print msg_context
         if msg_context.__class__ == u"".__class__:
             msg_context = msg_context.strip()
         else:
