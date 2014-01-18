@@ -46,6 +46,7 @@ class QQ(thread.Thread):
         self.body_msg_id = 5000001
         self.qun_msg_id = 9000001
         self.qq = qq
+        self.timeout  = 0
         self.cj = CookieJar()
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
         self.opener.addheaders.pop()

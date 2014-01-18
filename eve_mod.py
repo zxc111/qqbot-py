@@ -2,10 +2,10 @@
 import urllib
 import os, sys
 import traceback
-import traceback
 import logging
 import MySQLdb as sql
 import re
+from xpinyin import Pinyin
 import pdb
 
 
@@ -21,13 +21,17 @@ class Eve_Jump():
             traceback.print_exc()
 
     def translation_cn_to_en(self, cn):
+        p = Pinyin()
         only = re.compile(ur"[\u4e00-\u9fa5a-z0-9A-Z/-]+")
         cn = only.findall(cn)
-        self.cur.execute("select * from map where cn = '%s'" % cn[0])
+        pinyin = p.get_pinyin(cn[0], '')
+        self.cur.execute("select * from map where pinyin like '%s%%'" % pinyin)
         data = self.cur.fetchall()
-        data = data[0][1].strip(" ")
-        data = data.replace(" ", "_", data.count(" "))
-        return data
+        print data
+        en = data[0][1].strip(" ")
+        en = en.replace(" ", "_", data.count(" "))
+        cn = data[0][2].strip(" ")
+        return en , cn
 
     def get_data(self, where):
         try:
@@ -43,7 +47,6 @@ class Eve_Jump():
         count = self.data.count("link-5")
         p = re.compile(r'link-5-\d+')
         res = p.findall(self.data)
-        #print res
         return res, count
 
     def find_path(self, res):
@@ -53,10 +56,8 @@ class Eve_Jump():
             i += 1
             self.cur.execute("select * from map where id = %s" % int(id[7:]))
             data = self.cur.fetchall()
-            #print data[0]
             current = "%s:%s" % (i, data[0][2])
             result = "%s %s" % (result, current)
-        #print result
         return result
 
     ###NOTE: category 0: route, 1: jump_count. 
@@ -64,17 +65,15 @@ class Eve_Jump():
     def find_solarSystem_jump_or_route(self, start, end, mode, category):
         self.connect_sql()
         try:
-            #pdb.set_trace()
-            print start, end
-            start_en = self.translation_cn_to_en(start.upper())
-            end_en = self.translation_cn_to_en(end.upper())
+            start_en, start_cn = self.translation_cn_to_en(start.lower())
+            end_en, end_cn = self.translation_cn_to_en(end.lower())
             self.get_data("%s:%s:%s" % (mode, start_en, end_en))
             path = self.parser_html()
             print path
             if category == 0:
                 return self.find_path(path[0])
             else:
-                return u"%s 至 %s 共经过 %s 次跳跃。" % (start, end, path[1] - 1)
+                return u"%s 至 %s 共经过 %s 次跳跃。" % (start_cn, end_cn, path[1] - 1)
         except:
             self.db.close()
             traceback.print_exc()
