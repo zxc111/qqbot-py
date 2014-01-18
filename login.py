@@ -51,7 +51,6 @@ class QQ(thread.Thread):
         self.opener.addheaders.pop()
         self.clientid = "52332159"
         thread.Thread.__init__(self)
-        self.timeout = 0
         self.captcha = random.random()
         self.__psessionid = ""
 
@@ -188,14 +187,15 @@ class QQ(thread.Thread):
                 if thread_qq.timeout == 1 or self.captcha != captcha:
                     debugger("keep_live end and ready reset")
                     break
-                request_msg = self.keep_live()
-                if request_msg.__class__ == "".__class__:
-                    request_msg_to_json = json.loads(request_msg)
-                    msg().return_from_tencent(request_msg_to_json)
                 else:
-                    flag += 1
-                    if flag > 15: thread_qq.timeout = 1
-                    debugger("msg_get_error")
+                    request_msg = self.keep_live()
+                    if request_msg.__class__ == "".__class__:
+                        request_msg_to_json = json.loads(request_msg)
+                        msg().return_from_tencent(request_msg_to_json)
+                    else:
+                        flag += 1
+                        if flag > 15: thread_qq.timeout = 1
+                        debugger("msg_get_error")
             except:
                 if flag > 15: thread_qq.timeout = 1
                 debugger(catch_error())
@@ -317,6 +317,7 @@ def login(qq, pw):
         time.sleep(5)
     while 1:
         if thread_qq.timeout == 1 or time_now != time.localtime().tm_yday:
+            debugger("session close")
             break
         time.sleep(100)
 
