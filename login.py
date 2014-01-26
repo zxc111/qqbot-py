@@ -46,9 +46,9 @@ class QQ(thread.Thread):
         self.body_msg_id = 5000001
         self.qun_msg_id = 9000001
         self.qq = qq
-        self.timeout  = 0
-        self.cj = CookieJar()
-        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
+        self.timeout = 0
+        self.cookie = CookieJar()
+        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie))
         self.opener.addheaders.pop()
         self.clientid = "52332159"
         thread.Thread.__init__(self)
@@ -61,7 +61,7 @@ class QQ(thread.Thread):
             data = self.opener.open(check_url).read()
             return data
         except:
-            debugger(catch_error())
+            save_log(catch_error())
 
     def get_verify(self, path):
         verify_jpg = "http://captcha.qq.com/getimage?aid=1003903&&uin=%s" % self.qq + "&vc_type=%s" % path
@@ -76,7 +76,7 @@ class QQ(thread.Thread):
                 contain = self.opener.open(self.sign_url, timeout = 5).read()
                 flag = 0
             except:
-                debugger(catch_error())
+                save_log(catch_error())
                 if count > 10: flag = 0
                 count += 1
         contain = contain[8:-2].split(",")[2]
@@ -88,13 +88,12 @@ class QQ(thread.Thread):
                 self.opener.open(contain, timeout = 5).read()
                 flag = 0
             except:
-                debugger(catch_error())
+                save_log(catch_error())
                 if count > 10: flag = 0
                 count += 1
-        cook_ = self.cj._cookies.values()[1]
-        cook_2 = self.cj
+        cook_ = self.cookie._cookies.values()[1]
+        cook_2 = self.cookie
         temp = []
-        coo = ""
         for index, cookie in enumerate(cook_2):
             if cookie.name == "ptwebqq":
                 ptweb = cookie.value
@@ -102,7 +101,6 @@ class QQ(thread.Thread):
                 skey = cookie.value
             if cookie.name == "uin":
                 uin = cookie.value
-            coo = "%s %s=%s;" % (coo, cookie.name, cookie.value)
         login = """{
             "status":"online",
             "ptwebqq":"%s",
@@ -115,7 +113,6 @@ class QQ(thread.Thread):
         self.opener.addheaders.append(("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=1&id=2"))
         self.opener.addheaders.append(("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36"))
         req = urllib2.Request("http://d.web2.qq.com/channel/login2", data_)
-        #debugger(self.opener.addheaders)
         flag = 1
         while flag:
             try:
@@ -123,10 +120,10 @@ class QQ(thread.Thread):
                 flag = 0
                 self.__psessionid = json.loads(jsondata).values()[1]["psessionid"]
             except:
-                debugger(catch_error())
+                save_log(catch_error())
 
     def ret(self):
-        data = self.check_()[13 : -2]
+        data = self.check_()[13:-2]
         fir, sec, thi = data.split(",")
         if fir[1:-1] == "0":
             return sec[1:-1], thi[1:-1]
@@ -149,10 +146,10 @@ class QQ(thread.Thread):
             try:
                 return self.opener.open(req).read()
             except:
-                debugger(catch_error())
+                save_log(catch_error())
 
     def post_msg_to_body_or_qun(self, to_id, msg, to_where):
-        debugger("send msg")
+        save_log("send msg")
         url, data = self.set_sent_msg_post_data(to_id, to_where, msg)
         req = urllib2.Request(url, data.encode("utf8"))
         flag = 1
@@ -160,15 +157,16 @@ class QQ(thread.Thread):
         while flag:
             try:
                 i += 1
-                debugger(self.opener.open(req, timeout=5).read())
+                save_log(self.opener.open(req, timeout=5).read())
                 flag = 0
             except:
-                debugger(catch_error())
+                save_log(catch_error())
                 if i > 10: flag = 0
 
     def set_sent_msg_post_data(self, to_id, to_where, msg):
         to_id = "%s" % to_id
         data = "%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A"
+
         if to_where == "message":
             self.body_msg_id = self.body_msg_id + 1
             data = "%7B%22to%22%3A" + to_id + "%2C%22face%22%3A540" + data + "%s" % self.body_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % self.__psessionid) + "%22%7D"
@@ -177,6 +175,7 @@ class QQ(thread.Thread):
             self.qun_msg_id = self.qun_msg_id + 1
             data = "%7B%22group_uin%22%3A" + to_id + data + "%s" % self.qun_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % self.__psessionid) + "%22%7D"
             url = "http://d.web2.qq.com/channel/send_qun_msg2"
+
         data = "r=%s&clientid=%s&psessionid=%s" % (data, self.clientid, self.__psessionid)
         return url, data
 
@@ -186,7 +185,7 @@ class QQ(thread.Thread):
             flag = 0
             try:
                 if thread_qq.timeout == 1 or self.captcha != captcha:
-                    debugger("keep_live end and ready reset")
+                    save_log("keep_live end and ready reset")
                     break
                 else:
                     request_msg = self.keep_live()
@@ -196,10 +195,10 @@ class QQ(thread.Thread):
                     else:
                         flag += 1
                         if flag > 15: thread_qq.timeout = 1
-                        debugger("msg_get_error")
+                        save_log("msg_get_error")
             except:
                 if flag > 15: thread_qq.timeout = 1
-                debugger(catch_error())
+                save_log(catch_error())
 
 
 class msg:
@@ -211,12 +210,14 @@ class msg:
             for msg in msg_data["result"]:
                 res = msg
                 print msg
+
                 if res["poll_type"] == "message" or res["poll_type"] == "group_message":
                     msg_context = res["value"]["content"][1]
                     msg_from = res["value"]["from_uin"]
                     to_where = res["poll_type"]
-                    debugger("from %s" % msg_from)
-                    debugger("context %s" % msg_context)
+                    save_log("from %s" % msg_from)
+                    save_log("context %s" % msg_context)
+
                     try:
                         if thread_qq.timeout == 0:
                             msg_context = self.choice_option(msg_context)
@@ -224,7 +225,8 @@ class msg:
                             if msg_context != "":
                                 thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
                     except:
-                        debugger(catch_error())
+                        save_log(catch_error())
+
         elif msg_data["retcode"] in self.error_code:
             thread_qq.timeout = 1
 
@@ -235,56 +237,39 @@ class msg:
             msg_context = msg_context.strip()
         else:
             return ""
-        print msg_context
-        if msg_context == "-h":
-            msg_context = u"-route 地点1 地点2  查询地点1至地点2路线\\\\n-jump 地点1 地点2  查询地点1至地点2跳数\\\\n-hole 虫洞编号  查询该虫洞信息"
-        elif msg_context[:7] == "-route1" or msg_context[:7] == "-route ":
-            try:
-                path = msg_context.split(" ")
-                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 0)
-                print msg_context
-            except:
+
+        try:
+            if msg_context == "-h":
+                msg_context = u"-route 地点1 地点2  查询地点1至地点2路线\\\\n-jump 地点1 地点2  查询地点1至地点2跳数\\\\n-hole 虫洞编号  查询该虫洞信息"
+            elif msg_context[:7] == "-route1" or msg_context[:7] == "-route ":
+                    path = msg_context.split(" ")
+                    msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 0)
+                    print msg_context
+            elif msg_context[:7] == "-route2":
+                    path = msg_context.split(" ")
+                    msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 2, 0)
+            elif msg_context[:7] == "-route3":
+                    path = msg_context.split(" ")
+                    msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 3, 0)
+            elif msg_context[:6] == "-jump " or msg_context[:6] == "-jump1":
+                    path = msg_context.split(" ")
+                    msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 1)
+            elif msg_context[:6] == "-jump2":
+                    path = msg_context.split(" ")
+                    msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 2, 1)
+            elif msg_context[:6] == "-jump3":
+                    path = msg_context.split(" ")
+                    msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 3, 1)
+            elif msg_context[:5] == "-hole":
+                    path = msg_context.split(" ")
+                    print path
+                    msg_context = EVE.find_hole(path[1])
+            else:
                 msg_context = ""
-        elif msg_context[:7] == "-route2":
-            try:
-                path = msg_context.split(" ")
-                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 2, 0)
-            except:
-                msg_context = ""
-        elif msg_context[:7] == "-route3":
-            try:
-                path = msg_context.split(" ")
-                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 3, 0)
-            except:
-                msg_context = ""
-        elif msg_context[:6] == "-jump " or msg_context[:6] == "-jump1":
-            try:
-                path = msg_context.split(" ")
-                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 1)
-            except:
-                msg_context = ""
-        elif msg_context[:6] == "-jump2":
-            try:
-                path = msg_context.split(" ")
-                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 2, 1)
-            except:
-                msg_context = ""
-        elif msg_context[:6] == "-jump3":
-            try:
-                path = msg_context.split(" ")
-                msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 3, 1)
-            except:
-                msg_context = ""
-        elif msg_context[:5] == "-hole":
-            try:
-                path = msg_context.split(" ")
-                print path
-                msg_context = EVE.find_hole(path[1])
-            except:
-                msg_context = ""
-        else:
+        except:
             msg_context = ""
         return msg_context
+
 
 def to_bin(str):
     bin = []
@@ -294,10 +279,12 @@ def to_bin(str):
     exec ("bin = '%s'" % bin)
     return bin
 
+
 def translate_passwd(uin, pw, verify):
     pw1 = to_bin(hashlib.md5(pw).hexdigest().upper())
     pw2 = hashlib.md5(pw1 + uin).hexdigest().upper()
     return hashlib.md5(pw2 + verify).hexdigest().upper()
+
 
 def login(qq, pw):
     time_now = time.localtime().tm_yday
@@ -310,36 +297,47 @@ def login(qq, pw):
     sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % password + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
     thread_qq.sign_url = sign_url
     thread_qq.login()
+
     for i in range(0, 5):
         exec("thread%s = thread.Thread(target=thread_qq.run)" % i)
         exec("thread%s.setDaemon(True)" % i)
         exec("thread%s.start()" % i)
-        debugger("thread %s start \n" % i)
+        save_log("thread %s start \n" % i)
         time.sleep(5)
+
     while 1:
         if thread_qq.timeout == 1 or time_now != time.localtime().tm_yday:
-            debugger("session close")
+            save_log("session close")
             break
         time.sleep(100)
 
 
-def debugger(msg):
+def save_log(msg):
     try:
         logging.basicConfig(filename = log, level = logging.DEBUG)
         logging.debug(msg + "  " + time.asctime())
     except:
-        debugger(catch_error())
+        save_log(catch_error())
+
 
 def catch_error():
     exc_info = traceback.format_exc()
     print exc_info
     return exc_info
 
+
 if __name__ == "__main__":
     global verify_path, log, EVE
     EVE = eve_mod.Eve_Jump()
     qq, password, verify_path, log = Config.set_config()
+    flag = 0
     while 1:
-        login(qq, password)
-        debugger("connected timeout, so login again")
-
+        try:
+            login(qq, password)
+            save_log("connected timeout, so login again")
+            time.sleep(100)
+        except KeyboardInterrupt:
+            break
+        except:
+            flag += 1
+            if flag >= 5: break
