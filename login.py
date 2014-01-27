@@ -148,16 +148,21 @@ class QQ(thread.Thread):
             except:
                 save_log(catch_error())
 
-    def post_msg_to_body_or_qun(self, to_id, msg, to_where):
+    def post_msg_to_body_or_qun(self, to_id, msg_data, to_where):
         save_log("send msg")
-        url, data = self.set_sent_msg_post_data(to_id, to_where, msg)
+        url, data = self.set_sent_msg_post_data(to_id, to_where, msg_data)
         req = urllib2.Request(url, data.encode("utf8"))
         flag = 1
         i = 0
         while flag:
             try:
                 i += 1
-                save_log(self.opener.open(req, timeout=5).read())
+                request_msg = self.opener.open(req, timeout=10).read()
+                save_log(request_msg)
+                if request_msg.__class__ == "".__class__:
+                    request_msg_to_json = json.loads(request_msg)
+                if msg().should_set_to_restart(request_msg_to_json["retcode"]):
+                    thread_qq.timeout = 1
                 flag = 0
             except:
                 save_log(catch_error())
@@ -168,11 +173,11 @@ class QQ(thread.Thread):
         data = "%2C%22content%22%3A%22%5B%5C%22" + "%s" % msg + "%5C%22%2C%5C%22%5C%22%2C%5B%5C%22font%5C%22%2C%7B%5C%22name%5C%22%3A%5C%22%E5%AE%8B%E4%BD%93%5C%22%2C%5C%22size%5C%22%3A%5C%2210%5C%22%2C%5C%22style%5C%22%3A%5B0%2C0%2C0%5D%2C%5C%22color%5C%22%3A%5C%22000000%5C%22%7D%5D%5D%22%2C%22msg_id%22%3A"
 
         if to_where == "message":
-            self.body_msg_id = self.body_msg_id + 1
+            self.body_msg_id += 1
             data = "%7B%22to%22%3A" + to_id + "%2C%22face%22%3A540" + data + "%s" % self.body_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % self.__psessionid) + "%22%7D"
             url = "http://d.web2.qq.com/channel/send_buddy_msg2"
         else:
-            self.qun_msg_id = self.qun_msg_id + 1
+            self.qun_msg_id += 1
             data = "%7B%22group_uin%22%3A" + to_id + data + "%s" % self.qun_msg_id + "%2C%22clientid%22%3A%22" + ("%s" % self.clientid) + "%22%2C%22psessionid%22%3A%22" + ("%s" % self.__psessionid) + "%22%7D"
             url = "http://d.web2.qq.com/channel/send_qun_msg2"
 
@@ -185,7 +190,8 @@ class QQ(thread.Thread):
             flag = 0
             try:
                 if thread_qq.timeout == 1 or self.captcha != captcha:
-                    save_log("keep_live end and ready reset")
+                    save_log("keep_live end and ready restart")
+                    thread_qq.timeout = 1
                     break
                 else:
                     request_msg = self.keep_live()
@@ -201,16 +207,18 @@ class QQ(thread.Thread):
                 save_log(catch_error())
 
 
-class msg:
-    def __init__(self):
-        self.error_code = [121, 100006, 120, 103]
+class msg():
+    @staticmethod
+    def should_set_to_restart(retcode):
+        error_code = [121, 100006, 120, 103]
+        if retcode in error_code:
+            return True
+        else:
+            return False
 
     def return_from_tencent(self, msg_data):
         if msg_data["retcode"] == 0:
-            for msg in msg_data["result"]:
-                res = msg
-                print msg
-
+            for res in msg_data["result"]:
                 if res["poll_type"] == "message" or res["poll_type"] == "group_message":
                     msg_context = res["value"]["content"][1]
                     msg_from = res["value"]["from_uin"]
@@ -227,12 +235,10 @@ class msg:
                     except:
                         save_log(catch_error())
 
-        elif msg_data["retcode"] in self.error_code:
+        elif msg().should_set_to_restart(msg_data["retcode"]):
             thread_qq.timeout = 1
 
     def choice_option(self, msg_context):
-        #pdb.set_trace()
-        #print msg_context
         if msg_context.__class__ == u"".__class__:
             msg_context = msg_context.strip()
         else:
@@ -244,7 +250,6 @@ class msg:
             elif msg_context[:7] == "-route1" or msg_context[:7] == "-route ":
                     path = msg_context.split(" ")
                     msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 0)
-                    print msg_context
             elif msg_context[:7] == "-route2":
                     path = msg_context.split(" ")
                     msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 2, 0)
@@ -314,6 +319,7 @@ def login(qq, pw):
 
 def save_log(msg):
     try:
+        print msg
         logging.basicConfig(filename = log, level = logging.DEBUG)
         logging.debug(msg + "  " + time.asctime())
     except:
@@ -322,7 +328,6 @@ def save_log(msg):
 
 def catch_error():
     exc_info = traceback.format_exc()
-    print exc_info
     return exc_info
 
 
