@@ -91,9 +91,8 @@ class QQ(thread.Thread):
                 save_log(catch_error())
                 if count > 10: flag = 0
                 count += 1
-        cook_ = self.cookie._cookies.values()[1]
         cook_2 = self.cookie
-        temp = []
+        save_log("init cookie: %s" % cook_2)
         for index, cookie in enumerate(cook_2):
             if cookie.name == "ptwebqq":
                 ptweb = cookie.value
@@ -156,17 +155,20 @@ class QQ(thread.Thread):
         i = 0
         while flag:
             try:
-                i += 1
                 request_msg = self.opener.open(req, timeout=10).read()
                 save_log(request_msg)
+                save_log(msg_data)
                 if request_msg.__class__ == "".__class__:
                     request_msg_to_json = json.loads(request_msg)
-                if msg().should_set_to_restart(request_msg_to_json["retcode"]):
-                    thread_qq.timeout = 1
-                flag = 0
+                    if msg().should_set_to_restart(request_msg_to_json["retcode"]):
+                        thread_qq.timeout = 1
+                        save_log("now cookie: %s" % self.cookie)
+                        print "send error (code timeout)"
+                    flag = 0
             except:
-                save_log(catch_error())
+                i += 1
                 if i > 10: flag = 0
+                save_log(catch_error())
 
     def set_sent_msg_post_data(self, to_id, to_where, msg):
         to_id = "%s" % to_id
