@@ -117,7 +117,6 @@ class Eve_Jump():
                 res.append(long(i[7:]))
             res.remove(res[0])
             if target_number in res:
-                pdb.set_trace()
                 number = res.index(target_number)
                 print u"%s 至 %s 跳跃距离: %s" % (place_cn, target_cn, warp_distance[number])
                 return u"%s 至 %s 跳跃距离: %s" % (place_cn, target_cn, warp_distance[number])
