@@ -271,6 +271,10 @@ class msg():
                     path = msg_context.split(" ")
                     print path
                     msg_context = EVE.find_hole(path[1])
+            elif msg_context[:7] == "-range":
+                    path = msg_context.split(" ")
+                    print path
+                    msg_context = EVE.range(path[1], path[2])
             else:
                 msg_context = ""
         except:

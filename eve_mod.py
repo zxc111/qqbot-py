@@ -11,7 +11,7 @@ import pdb
 
 class Eve_Jump():
     def __init__(self):
-        self.url = "http://evemaps.dotlan.net/route/"
+        self.url_route = "http://evemaps.dotlan.net/"
 
     def connect_sql(self):
         try:
@@ -31,17 +31,18 @@ class Eve_Jump():
         en = data[0][1].strip(" ")
         en = en.replace(" ", "_", data.count(" "))
         cn = data[0][2].strip(" ")
-        return en , cn
+        number = data[0][0]
+        return en , cn, number
 
     def get_data(self, where):
         try:
-            self.data = urllib.urlopen(self.url + where).read()
+            self.data = urllib.urlopen(self.url_route + where).read()
         except:
             traceback.print_exc()
             return "error"
 
     def parser_html(self):
-        begin_path = self.data.find('<table cellpadding="3" cellspacing="1" border="0" width="100%" class="tablelist table-tooltip">')
+        begin_path = self.data.find('<table cellpadding="3" cellspacing="1" border="0" width="100%" class="table')
         end_path = self.data.find('<div align="right" style="padding-top: 10px;">Kills/Jumps in the last 3 hours</div>')
         self.data = self.data[ begin_path : end_path ]
         count = self.data.count("link-5")
@@ -65,9 +66,10 @@ class Eve_Jump():
     def find_solarSystem_jump_or_route(self, start, end, mode, category):
         self.connect_sql()
         try:
-            start_en, start_cn = self.translation_cn_to_en(start.lower())
-            end_en, end_cn = self.translation_cn_to_en(end.lower())
-            self.get_data("%s:%s:%s" % (mode, start_en, end_en))
+            start_en, start_cn, start_number = self.translation_cn_to_en(start.lower())
+            end_en, end_cn, end_number = self.translation_cn_to_en(end.lower())
+            #NOTE: url options
+            self.get_data("route/%s:%s:%s" % (mode, start_en, end_en))
             path = self.parser_html()
             print path
             if category == 0:
@@ -100,3 +102,31 @@ class Eve_Jump():
             self.db.close()
             traceback.print_exc()
             return u"无该洞资料."
+
+    def jump_range(self, place, target):
+        self.connect_sql()
+        try:
+            place_en, place_cn, place_number = self.translation_cn_to_en(place.lower())
+            target_en, target_cn, target_number  = self.translation_cn_to_en(target.lower())
+            self.get_data("range/Thanatos,5/%s" % place_en )
+            path = self.parser_html()
+            p = re.compile(r'\s\d+\.\d+\sly')
+            warp_distance = p.findall(self.data)
+            res = []
+            for i in path[0]:
+                res.append(long(i[7:]))
+            res.remove(res[0])
+            if target_number in res:
+                pdb.set_trace()
+                number = res.index(target_number)
+                print u"%s 至 %s 跳跃距离: %s" % (place_cn, target_cn, warp_distance[number])
+                return u"%s 至 %s 跳跃距离: %s" % (place_cn, target_cn, warp_distance[number])
+            else:
+                print u"%s不再跳跃范围内" % target_cn
+                return u"%s不在跳跃范围内" % target_cn
+            #self.find_path(path[0])
+        except:
+            self.db.close()
+            traceback.print_exc()
+            return ""
+
