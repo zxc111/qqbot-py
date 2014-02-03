@@ -282,17 +282,8 @@ class msg():
         return msg_context
 
 
-def to_bin(str):
-    bin = []
-    for i in range(0, len(str), 2):
-        bin.append("\\x" + str[i : i + 2])
-    bin = "".join(bin)
-    exec ("bin = '%s'" % bin)
-    return bin
-
-
 def translate_passwd(uin, pw, verify):
-    pw1 = to_bin(hashlib.md5(pw).hexdigest().upper())
+    pw1 = (hashlib.md5(pw).hexdigest().upper()).decode("hex")
     pw2 = hashlib.md5(pw1 + uin).hexdigest().upper()
     return hashlib.md5(pw2 + verify).hexdigest().upper()
 
