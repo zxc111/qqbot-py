@@ -57,7 +57,10 @@ class Eve_Jump():
             i += 1
             self.cur.execute("select * from map where id = %s" % int(id[7:]))
             data = self.cur.fetchall()
-            current = "%s:%s" % (i, data[0][2])
+            if float(data[0][4]) < 0.5:
+                current = "%s:%s(!)" % (i, data[0][2])
+            else:
+                current = "%s:%s" % (i, data[0][2])
             result = "%s %s" % (result, current)
         return result
 
