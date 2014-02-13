@@ -54,6 +54,7 @@ class QQ(thread.Thread):
         thread.Thread.__init__(self)
         self.captcha = random.random()
         self.__psessionid = ""
+        self.get_captcha_time = 0
 
     def check_(self):
         try:
@@ -125,8 +126,15 @@ class QQ(thread.Thread):
         data = self.check_()[13:-2]
         fir, sec, thi = data.split(",")
         if fir[1:-1] == "0":
+            self.get_captcha_time = 3
             return sec[1:-1], thi[1:-1]
+        elif self.get_captcha_time < 3:
+            save_log("Try get captcha after 30 sec.This is %s times to try get." % thread_qq.get_captcha_time)
+            self.get_captcha_time += 1
+            time.sleep(30)
+            return ["", ""]
         else:
+            self.get_captcha_time = 3
             file_ = open(verify_path, "wb+")
             jpgdata = self.get_verify(thi[1:-1])
             file_.write(jpgdata)
@@ -248,7 +256,7 @@ class msg():
 
         try:
             if msg_context == "-h":
-              msg_context = u"-route 地点1 地点2  查询地点1至地点2路线\\\\n-jump 地点1 地点2  查询地点1至地点2跳数\\\\n-hole 虫洞编号  查询该虫洞信息\\\\n ps:1为最近，2为安全，3为不安全\\\\n-range 起点 终点 旗舰跃迁距离"
+              msg_context = u"-route 地点1 地点2  查询地点1至地点2路线\\\\n-jump 地点1 地点2  查询地点1至地点2跳数\\\\n-hole 虫洞编号  查询该虫洞信息\\\\n-range 起点 终点 旗舰跃迁距离\\\\nps:1为最近，2为安全，3为不安全"
             elif msg_context[:7] == "-route1" or msg_context[:7] == "-route ":
                     path = msg_context.split(" ")
                     msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 0)
@@ -289,13 +297,20 @@ def translate_passwd(uin, pw, verify):
 
 
 def login(qq, pw):
-    time_now = time.localtime().tm_yday
     global thread_qq
+    thread_qq = None
+    time_now = time.localtime().tm_yday
     thread_qq = QQ(qq)
     thread_qq.setDaemon(True)
-    verify, uin = thread_qq.ret()
+
+    # Get Captcha from what u c and input
+    while thread_qq.get_captcha_time < 3:
+        verify, uin = thread_qq.ret()
     exec("uin = '%s'" % uin)
+
+    # Encrypt password
     password = translate_passwd(uin, pw, verify)
+
     sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % password + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
     thread_qq.sign_url = sign_url
     thread_qq.login()
