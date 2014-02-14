@@ -126,15 +126,15 @@ class QQ(thread.Thread):
         data = self.check_()[13:-2]
         fir, sec, thi = data.split(",")
         if fir[1:-1] == "0":
-            self.get_captcha_time = 3
+            self.get_captcha_time = 9
             return sec[1:-1], thi[1:-1]
         elif self.get_captcha_time < 3:
-            save_log("Try get captcha after 30 sec.This is %s times to try get." % thread_qq.get_captcha_time)
+            save_log("Try get captcha after 30 sec.This is %s times to try to get." % thread_qq.get_captcha_time)
             self.get_captcha_time += 1
             time.sleep(30)
             return ["", ""]
         else:
-            self.get_captcha_time = 3
+            self.get_captcha_time = 9
             file_ = open(verify_path, "wb+")
             jpgdata = self.get_verify(thi[1:-1])
             file_.write(jpgdata)
@@ -299,12 +299,11 @@ def translate_passwd(uin, pw, verify):
 def login(qq, pw):
     global thread_qq
     thread_qq = None
-    time_now = time.localtime().tm_yday
     thread_qq = QQ(qq)
     thread_qq.setDaemon(True)
 
     # Get Captcha from what u c and input
-    while thread_qq.get_captcha_time < 3:
+    while thread_qq.get_captcha_time != 9:
         verify, uin = thread_qq.ret()
     exec("uin = '%s'" % uin)
 
@@ -322,8 +321,13 @@ def login(qq, pw):
         save_log("thread %s start \n" % i)
         time.sleep(5)
 
+    # Restart everyday
+    timer_ = thread.Thread(target = timer, args = [time.time()])
+    timer_.setDaemon(True)
+    timer_.start()
+
     while 1:
-        if thread_qq.timeout == 1 or time_now != time.localtime().tm_yday:
+        if thread_qq.timeout == 1:
             save_log("session close")
             break
         time.sleep(100)
@@ -341,6 +345,14 @@ def save_log(msg):
 def catch_error():
     exc_info = traceback.format_exc()
     return exc_info
+
+def timer(start_time):
+    while time.time() - start_time < 24*60*60:
+        time.sleep(60)
+        print "running: %smin" % ((time.time()-start_time)/60)
+        save_log("running: %smin" % ((time.time()-start_time)/60))
+    thread_qq.timeout = 1
+        
 
 
 if __name__ == "__main__":
