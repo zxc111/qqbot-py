@@ -122,6 +122,7 @@ class QQ(thread.Thread):
             except:
                 save_log(catch_error())
 
+    # Try get captcha from Tencent 3 times.
     def ret(self):
         data = self.check_()[13:-2]
         fir, sec, thi = data.split(",")
@@ -144,6 +145,7 @@ class QQ(thread.Thread):
             return sec.upper(), thi[1:-1]
 
     def keep_live(self):
+        global alive
         print "send_to_keep_live begin"
         data = """{"clientid":"%s","psessionid":"%s","key":0,"ids":[]}""" % (self.clientid, self.__psessionid)
         data = "r=%s&clientid=%s&psessionid=%s" % (urllib.quote(data), self.clientid, self.__psessionid)
@@ -151,9 +153,12 @@ class QQ(thread.Thread):
         flag = 1
         while flag and thread_qq.timeout == 0:
             try:
-                return self.opener.open(req).read()
+                res = self.opener.open(req).read()
+                alive = 10
+                return res
             except:
                 save_log(catch_error())
+                time.sleep(2)
 
     def post_msg_to_body_or_qun(self, to_id, msg_data, to_where):
         save_log("send msg")
@@ -297,7 +302,7 @@ def translate_passwd(uin, pw, verify):
 
 
 def login(qq, pw):
-    global thread_qq
+    global thread_qq, alive
     thread_qq = None
     thread_qq = QQ(qq)
     thread_qq.setDaemon(True)
@@ -322,15 +327,22 @@ def login(qq, pw):
         time.sleep(5)
 
     # Restart everyday
-    timer_ = thread.Thread(target = timer, args = [time.time()])
+    timer_ = thread.Thread(target = timer, args = [time.time(), thread_qq.captcha])
     timer_.setDaemon(True)
     timer_.start()
+
+    # Default value is 10, every keep_live while set value to 10. If check_thread return False means it should be restart.
+    alive = 10
 
     while 1:
         if thread_qq.timeout == 1:
             save_log("session close")
             break
         time.sleep(100)
+        if check_thread():
+            alive -= 4
+        else:
+            break
 
 
 def save_log(msg):
@@ -346,13 +358,21 @@ def catch_error():
     exc_info = traceback.format_exc()
     return exc_info
 
-def timer(start_time):
+def timer(start_time, captcha):
     while time.time() - start_time < 24*60*60:
         time.sleep(60)
         print "running: %smin" % ((time.time()-start_time)/60)
         save_log("running: %smin" % ((time.time()-start_time)/60))
+        if thread_qq.timeout == 1 or thread_qq.captcha != captcha:
+            break
     thread_qq.timeout = 1
-        
+
+def check_thread():
+    global alive
+    if alive <= 0 :
+        return False
+    else:
+        return True
 
 
 if __name__ == "__main__":
@@ -370,3 +390,4 @@ if __name__ == "__main__":
         except:
             flag += 1
             if flag >= 5: break
+            save_log(catch_error())
