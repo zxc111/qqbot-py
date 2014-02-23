@@ -124,15 +124,16 @@ class QQ(thread.Thread):
 
     # Try get captcha from Tencent 3 times.
     def ret(self):
+        global first_login
         data = self.check_()[13:-2]
         fir, sec, thi = data.split(",")
         if fir[1:-1] == "0":
             self.get_captcha_time = 9
             return sec[1:-1], thi[1:-1]
-        elif self.get_captcha_time < 3:
-            save_log("Try get captcha after 30 sec.This is %s times to try to get." % thread_qq.get_captcha_time)
+        elif self.get_captcha_time < 3 and first_login == False:
+            save_log("Try get captcha after 120 sec.This is %s times to try to get." % thread_qq.get_captcha_time)
             self.get_captcha_time += 1
-            time.sleep(30)
+            time.sleep(120)
             return ["", ""]
         else:
             self.get_captcha_time = 9
@@ -303,6 +304,7 @@ def translate_passwd(uin, pw, verify):
 
 def login(qq, pw):
     global thread_qq, alive
+    global first_login
     thread_qq = None
     thread_qq = QQ(qq)
     thread_qq.setDaemon(True)
@@ -325,6 +327,8 @@ def login(qq, pw):
         exec("thread%s.start()" % i)
         save_log("thread %s start \n" % i)
         time.sleep(5)
+
+    first_login = False
 
     # Restart everyday
     timer_ = thread.Thread(target = timer, args = [time.time(), thread_qq.captcha])
@@ -361,7 +365,6 @@ def catch_error():
 def timer(start_time, captcha):
     while time.time() - start_time < 24*60*60:
         time.sleep(60)
-        print "running: %smin" % ((time.time()-start_time)/60)
         save_log("running: %smin" % ((time.time()-start_time)/60))
         if thread_qq.timeout == 1 or thread_qq.captcha != captcha:
             break
@@ -377,6 +380,10 @@ def check_thread():
 
 if __name__ == "__main__":
     global verify_path, log, EVE
+
+    # First login input captcha without waiting.
+    global first_login
+    first_login = True
     EVE = eve_mod.Eve_Jump()
     qq, password, verify_path, log = Config.set_config()
     flag = 0
