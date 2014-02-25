@@ -59,7 +59,7 @@ class QQ(thread.Thread):
     def check_(self):
         try:
             check_url = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
-            data = self.opener.open(check_url).read()
+            data = self.opener.open(check_url, timeout = 30).read()
             return data
         except:
             save_log(catch_error())
@@ -116,7 +116,7 @@ class QQ(thread.Thread):
         flag = 1
         while flag:
             try:
-                jsondata = self.opener.open(req, timeout = 5).read()
+                jsondata = self.opener.open(req, timeout = 15).read()
                 flag = 0
                 self.__psessionid = json.loads(jsondata).values()[1]["psessionid"]
             except:
