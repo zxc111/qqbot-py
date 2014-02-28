@@ -262,7 +262,7 @@ class msg():
 
         try:
             if msg_context == "-h":
-              msg_context = u"-route 地点1 地点2  查询地点1至地点2路线\\\\n-jump 地点1 地点2  查询地点1至地点2跳数\\\\n-hole 虫洞编号  查询该虫洞信息\\\\n-range 起点 终点 旗舰跃迁距离\\\\nps:1为最近，2为安全，3为不安全"
+              msg_context = u"1.-route 地点1 地点2  查询地点1至地点2路线\\\\n2.-jump 地点1 地点2  查询地点1至地点2跳数\\\\n3.-hole 虫洞编号  查询该虫洞信息\\\\n4.-range 起点 终点 旗舰跃迁距离\\\\n"
             elif msg_context[:7] == "-route1" or msg_context[:7] == "-route ":
                     path = msg_context.split(" ")
                     msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 1, 0)

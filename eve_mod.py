@@ -28,11 +28,14 @@ class Eve_Jump():
         self.cur.execute("select * from map where pinyin like '%s%%'" % pinyin)
         data = self.cur.fetchall()
         print data
-        en = data[0][1].strip(" ")
-        en = en.replace(" ", "_", data.count(" "))
-        cn = data[0][2].strip(" ")
-        number = data[0][0]
-        return en , cn, number
+        if len(data) == 0:
+          return False, u"%s 星系不存在" % cn[0], ""
+        else:
+            en = data[0][1].strip(" ")
+            en = en.replace(" ", "_", data.count(" "))
+            cn = data[0][2].strip(" ")
+            number = data[0][0]
+            return en , cn, number
 
     def get_data(self, where):
         try:
@@ -70,7 +73,11 @@ class Eve_Jump():
         self.connect_sql()
         try:
             start_en, start_cn, start_number = self.translation_cn_to_en(start.lower())
+            if start_en == False:
+                return start_cn
             end_en, end_cn, end_number = self.translation_cn_to_en(end.lower())
+            if end_en == False:
+                return end_cn
             #NOTE: url options
             self.get_data("route/%s:%s:%s" % (mode, start_en, end_en))
             path = self.parser_html()
@@ -110,7 +117,11 @@ class Eve_Jump():
         self.connect_sql()
         try:
             place_en, place_cn, place_number = self.translation_cn_to_en(place.lower())
+            if place_en == False:
+                return place_cn
             target_en, target_cn, target_number  = self.translation_cn_to_en(target.lower())
+            if target_en == False:
+                return target_cn
             self.get_data("range/Thanatos,5/%s" % place_en )
             path = self.parser_html()
             p = re.compile(r'\s\d+\.\d+\sly')
@@ -131,4 +142,3 @@ class Eve_Jump():
             self.db.close()
             traceback.print_exc()
             return ""
-
