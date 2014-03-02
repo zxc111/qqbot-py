@@ -89,7 +89,7 @@ class Eve_Jump():
         except:
             self.db.close()
             traceback.print_exc()
-            return ""
+            return u"查询出错"
 
     def find_hole(self, id):
         self.connect_sql()
@@ -124,7 +124,7 @@ class Eve_Jump():
                 return target_cn
             self.get_data("range/Thanatos,5/%s" % place_en )
             path = self.parser_html()
-            p = re.compile(r'\s\d+\.\d+\sly')
+            p = re.compile(r'\d+\.\d+\sly')
             warp_distance = p.findall(self.data)
             res = []
             for i in path[0]:
@@ -141,4 +141,4 @@ class Eve_Jump():
         except:
             self.db.close()
             traceback.print_exc()
-            return ""
+            return u"查询出错"
