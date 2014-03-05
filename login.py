@@ -247,7 +247,7 @@ class msg():
                             msg_context = self.choice_option(msg_context)
                             print msg_context
                             if msg_context != "":
-                                thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_context, to_where]).start()
+                                thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_add_border(msg_context), to_where]).start()
                     except:
                         save_log(catch_error())
 
@@ -376,6 +376,19 @@ def check_thread():
         return False
     else:
         return True
+
+def msg_add_border(msg):
+    new_msg = u""
+    data = msg.split(u"\\\\n")
+    #pdb.set_trace()
+    for i in data:
+        temp = ""
+        for j in i:
+            temp += u"%s\u0305\u0332" % j
+        if temp != "":
+            new_msg += "[%s]\\\\n" % temp
+    return new_msg
+    
 
 
 if __name__ == "__main__":
