@@ -392,6 +392,10 @@ def msg_add_border(msg):
 
 
 if __name__ == "__main__":
+    # set utc +8
+    os.environ["TZ"] =  "Asia/Shanghai"
+    time.tzset()
+
     global verify_path, log, EVE
 
     # First login input captcha without waiting.
