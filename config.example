@@ -8,4 +8,4 @@ log =
 
 [email]
 receiver = xxx@xxx.com
-send = false # should be true or false
+send = true
