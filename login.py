@@ -13,9 +13,11 @@ import logging
 import traceback
 import random
 import eve_mod
+import smtplib
 from cookielib import CookieJar
 
 
+# Get options from config and return.
 class Config():
     @staticmethod
     def set_config():
@@ -38,7 +40,15 @@ class Config():
             log = path + "/log"
         else:
             log = config.get("debug", "log")
-        return qq, password, verify_path, log
+        if config.get("email", "receiver") != "":
+            receiver = config.get("email", "receiver")
+            if config.get("email", "send") == "true":
+                send = True
+            else:
+                send = False
+        else:
+            send = False
+        return qq, password, verify_path, log, receiver, send
 
 
 class QQ(thread.Thread):
@@ -141,6 +151,7 @@ class QQ(thread.Thread):
             jpgdata = self.get_verify(thi[1:-1])
             file_.write(jpgdata)
             file_.close()
+            send_email("The application need input captcha to run.")
             verifychar = raw_input("please input verify\n")
             sec = verifychar
             return sec.upper(), thi[1:-1]
@@ -384,11 +395,20 @@ def msg_add_border(msg):
     for i in data:
         temp = ""
         for j in i:
-            temp += u"%s\u0305\u0332" % j
+            temp += u"%s\u0489" % j
         if temp != "":
             new_msg += "[%s]\\\\n" % temp
     return new_msg
     
+def send_email(msg):
+    global receiver, send
+    sender = "QQ_Bot@localhost"
+    if send == True:
+        try:
+            send_mail = smtplib.SMTP('localhost')
+            send_email.sendmail(sender, [receiver], msg)
+        except:
+            save_log(catch_error())
 
 
 if __name__ == "__main__":
@@ -397,12 +417,16 @@ if __name__ == "__main__":
     time.tzset()
 
     global verify_path, log, EVE
+    EVE = eve_mod.Eve_Jump()
 
     # First login input captcha without waiting.
     global first_login
     first_login = True
-    EVE = eve_mod.Eve_Jump()
-    qq, password, verify_path, log = Config.set_config()
+
+    # If send == True, send email to receiver when meet error or need captcha.But the email maybe in trash...
+    global receiver, send
+    qq, password, verify_path, log, receiver, send = Config.set_config()
+
     flag = 0
     while 1:
         try:
@@ -413,5 +437,7 @@ if __name__ == "__main__":
             break
         except:
             flag += 1
-            if flag >= 5: break
             save_log(catch_error())
+            if flag >= 5:
+                break
+                send_email("The application has encountered an unexpected error and needs to close.")

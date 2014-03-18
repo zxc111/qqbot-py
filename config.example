@@ -5,3 +5,7 @@ verify_path = /home/xxx/123.jpg
 
 [debug]
 log = 
+
+[email]
+receiver = xxx@xxx.com
+send = false # should be true or false
