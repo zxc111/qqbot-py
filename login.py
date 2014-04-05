@@ -406,7 +406,7 @@ def send_email(msg):
     if send == True:
         try:
             send_mail = smtplib.SMTP('localhost')
-            send_email.sendmail(sender, [receiver], msg)
+            send_mail.sendmail(sender, [receiver], msg)
         except:
             save_log(catch_error())
 
