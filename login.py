@@ -135,8 +135,10 @@ class QQ(thread.Thread):
     # Try get captcha from Tencent 3 times.
     def ret(self):
         global first_login
+        #pdb.set_trace()
         data = self.check_()[13:-2]
-        fir, sec, thi = data.split(",")
+        #TODO tencent add a new value
+        fir, sec, thi, temp = data.split(",")
         if fir[1:-1] == "0":
             self.get_captcha_time = 9
             return sec[1:-1], thi[1:-1]
