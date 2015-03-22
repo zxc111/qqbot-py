@@ -342,7 +342,6 @@ def login(qq, pw):
     # Get Captcha from what u c and input
     while thread_qq.get_captcha_time != 9:
         verify, verify_session, uin = thread_qq.ret()
-    exec("uin = '%s'" % uin[1: -1])
 
     # Encrypt password
     # password = translate_passwd(uin, pw, verify)
