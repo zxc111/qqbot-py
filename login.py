@@ -15,6 +15,11 @@ import random
 import eve_mod
 import smtplib
 from cookielib import CookieJar
+try:
+    from spidermonkey import Runtime
+except:
+    raise Exception(u"""Please install spidermonkey.\nhttps://github.com/davisp/python-spidermonkey""")
+    
 
 
 # Get options from config and return.
@@ -68,7 +73,7 @@ class QQ(thread.Thread):
 
     def check_(self):
         try:
-            check_url = "https://ssl.ptlogin2.qq.com/check?uin=%s" % self.qq + "@qq.com&appid=1003903&js_ver=10043&js_type=0&login_sig=dHVFFlsCWR3XrDkWjbVdnghpzVWklG360kX6iJhV7cA2waWaPWCHlnYMZ5G36D9g&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.1479938756674528"
+            check_url = "https://ssl.ptlogin2.qq.com/check?pt_tea=1&uin={}&appid=1003903&js_ver=10116&js_type=0&login_sig=KpLck-z9xhDg60W6EW30eJ5e4-s2k2bfqyq*-IGwrxJhAVuo5XuinLfMHb4HNSq9&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html&r=0.5435769769828767".format(self.qq)
             data = self.opener.open(check_url, timeout = 30).read()
             return data
         except:
@@ -76,8 +81,9 @@ class QQ(thread.Thread):
 
     def get_verify(self, path):
         verify_jpg = "http://captcha.qq.com/getimage?aid=1003903&&uin=%s" % self.qq + "&vc_type=%s" % path
-        self.jpg = self.opener.open(verify_jpg).read()
-        return self.jpg
+        jpg = self.opener.open(verify_jpg).read()
+        verify_session = self.cookie._cookies[".qq.com"]["/"]["verifysession"].value
+        return jpg, verify_session
 
     def login(self):
         flag = 1
@@ -85,6 +91,7 @@ class QQ(thread.Thread):
         while flag:
             try:
                 contain = self.opener.open(self.sign_url, timeout = 5).read()
+                # print contain
                 flag = 0
             except:
                 save_log(catch_error())
@@ -135,28 +142,30 @@ class QQ(thread.Thread):
     # Try get captcha from Tencent 3 times.
     def ret(self):
         global first_login
-        #pdb.set_trace()
+        # pdb.set_trace()
         data = self.check_()[13:-2]
         #TODO tencent add a new value
-        fir, sec, thi, temp = data.split(",")
-        if fir[1:-1] == "0":
+        # fir, sec, thi, temp = data.split(",")
+        params = data.split(",")
+        if params[0][1:-1] == "0":
+            # ptui_checkVC('0','!ACX','\x00\x00\x00\x00\x10\xbf\x27\x4d','c36cc2c619afb9','0');
             self.get_captcha_time = 9
-            return sec[1:-1], thi[1:-1]
+            return params[1][1:-1], params[2][1:-1]
         elif self.get_captcha_time < 3 and first_login == False:
             save_log("Try get captcha after 120 sec.This is %s times to try to get." % thread_qq.get_captcha_time)
             self.get_captcha_time += 1
             time.sleep(120)
             return ["", ""]
         else:
+            # ptui_checkVC('1','70H_vQjupVFiU','\x00\x00\x00\x00\xa4\x15\x99\x5a','','0');
             self.get_captcha_time = 9
             file_ = open(verify_path, "wb+")
-            jpgdata = self.get_verify(thi[1:-1])
+            jpgdata, verify_session = self.get_verify(params[2][1:-1])
             file_.write(jpgdata)
             file_.close()
             send_email("The application need input captcha to run.")
-            verifychar = raw_input("please input verify\n")
-            sec = verifychar
-            return sec.upper(), thi[1:-1]
+            captcha = raw_input("please input verify\n")
+            return captcha.upper(), verify_session, params[2]
 
     def keep_live(self):
         global alive
@@ -258,7 +267,6 @@ class msg():
                     try:
                         if thread_qq.timeout == 0:
                             msg_context = self.choice_option(msg_context)
-                            print msg_context
                             if msg_context != "":
                                 thread.Thread(target=thread_qq.post_msg_to_body_or_qun, args=[msg_from, msg_add_border(msg_context), to_where]).start()
                     except:
@@ -296,11 +304,11 @@ class msg():
                     msg_context = EVE.find_solarSystem_jump_or_route(path[1], path[2], 3, 1)
             elif msg_context[:5] == "-hole":
                     path = msg_context.split(" ")
-                    print path
+                    #print path
                     msg_context = EVE.find_hole(path[1])
             elif msg_context[:7] == "-range ":
                     path = msg_context.split(" ")
-                    print path
+                    # print path
                     msg_context = EVE.jump_range(path[1], path[2])
             else:
                 msg_context = ""
@@ -310,9 +318,16 @@ class msg():
 
 
 def translate_passwd(uin, pw, verify):
-    pw1 = (hashlib.md5(pw).hexdigest().upper()).decode("hex")
-    pw2 = hashlib.md5(pw1 + uin).hexdigest().upper()
-    return hashlib.md5(pw2 + verify).hexdigest().upper()
+    # import pdb
+    # pdb.set_trace()
+    # pw1 = (hashlib.md5(pw).hexdigest().upper()).decode("hex")
+    # pw2 = hashlib.md5(pw1 + uin).hexdigest().upper()
+    # return hashlib.md5(pw2 + verify).hexdigest().upper()
+    cx = Runtime().new_context()
+    cx.execute(open("encrypt.js").read())
+    res = cx.execute('Encryption.getEncryption("{password}","{qq_number}",\
+        "{verify_code}")'.format(password=pw, qq_number=uin, verify_code=verify))
+    return res
 
 
 def login(qq, pw):
@@ -324,13 +339,15 @@ def login(qq, pw):
 
     # Get Captcha from what u c and input
     while thread_qq.get_captcha_time != 9:
-        verify, uin = thread_qq.ret()
-    exec("uin = '%s'" % uin)
+        verify, verify_session, uin = thread_qq.ret()
+    exec("uin = '%s'" % uin[1: -1])
 
     # Encrypt password
-    password = translate_passwd(uin, pw, verify)
+    # password = translate_passwd(uin, pw, verify)
+    password = translate_passwd(qq, pw, verify)
 
-    sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % password + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8"
+    # sign_url = "https://ssl.ptlogin2.qq.com/login?u=%s" % qq + "&p=%s" % password + "&verifycode=%s" % verify.lower() + "&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=8-14-19231&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10043&login_sig=1UQ3PnIwxYaa*Yx3R*IQ*rROvhGURkHXPitqoWEQ7q2FJ2R18cI6m25Gl9JZeap8&pt_verifysession_v1=" + verify_session[1: -1]
+    sign_url = "https://ssl.ptlogin2.qq.com/login?u={qq}&p={p}&verifycode={verify}&webqq_type=10&remember_uin=1&login2qq=1&aid=1003903&u1=http%3A%2F%2Fweb2.qq.com%2Floginproxy.html%3Flogin2qq%3D1%26webqq_type%3D10&h=1&ptredirect=0&ptlang=2052&daid=164&from_ui=1&pttype=1&dumy=&fp=loginerroralert&action=6-17-52584&mibao_css=m_webqq&t=1&g=1&js_type=0&js_ver=10116&login_sig=z5TsTQO3ICe2U93qkzg-ENYMoIxNcELz*yQ-a*xQ8HETegD73ZuO8*LWD0yQSPkU&pt_uistyle=5&pt_randsalt=0&pt_vcode_v1=0&pt_verifysession_v1={verifysession}".format(qq=qq, p=password, verify=verify.lower(), verifysession=verify_session)
     thread_qq.sign_url = sign_url
     thread_qq.login()
 
@@ -364,7 +381,7 @@ def login(qq, pw):
 
 def save_log(msg):
     try:
-        print msg
+        # print msg
         logging.basicConfig(filename = log, level = logging.DEBUG)
         logging.debug(msg + "  " + time.asctime())
     except:
