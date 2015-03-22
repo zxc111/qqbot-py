@@ -1,3 +1,8 @@
+## env
+请安装spidermonkey(https://github.com/davisp/python-spidermonkey)用来执行js(encrypt.js)
+
+
+
 config中配置qq参数
 如果要手动输入qq和密码请在"="后留空
 创建eve数据库, 将eve.sql 导入

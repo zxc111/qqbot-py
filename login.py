@@ -150,12 +150,13 @@ class QQ(thread.Thread):
         if params[0][1:-1] == "0":
             # ptui_checkVC('0','!ACX','\x00\x00\x00\x00\x10\xbf\x27\x4d','c36cc2c619afb9','0');
             self.get_captcha_time = 9
-            return params[1][1:-1], params[2][1:-1]
+            # captcha, verify_session, uin
+            return params[1][1:-1], params[3][1: -1], params[2][1:-1]
         elif self.get_captcha_time < 3 and first_login == False:
             save_log("Try get captcha after 120 sec.This is %s times to try to get." % thread_qq.get_captcha_time)
             self.get_captcha_time += 1
             time.sleep(120)
-            return ["", ""]
+            return ["", "", ""]
         else:
             # ptui_checkVC('1','70H_vQjupVFiU','\x00\x00\x00\x00\xa4\x15\x99\x5a','','0');
             self.get_captcha_time = 9
@@ -165,6 +166,7 @@ class QQ(thread.Thread):
             file_.close()
             send_email("The application need input captcha to run.")
             captcha = raw_input("please input verify\n")
+            # captcha, verify_session, uin
             return captcha.upper(), verify_session, params[2]
 
     def keep_live(self):
