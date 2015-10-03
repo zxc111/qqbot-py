@@ -1,3 +1,5 @@
+## 企鹅吧webqq关了，项目已死有事烧纸XSK
+
 ## env
 请安装spidermonkey(https://github.com/davisp/python-spidermonkey)用来执行js(encrypt.js)
 
